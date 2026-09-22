@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState, forwardRef } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import HeroBackgroundAnimations from './HeroBackgroundAnimations';
 
 const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -170,9 +171,11 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
 
   // Pre-calculate line styles based on screen dimensions for rendering
   const linesToRender: { isCenter: boolean }[] = [];
+  let centerX = 0;
+  let centerY = 0;
   if (dimensions.width > 0) {
-    const centerX = dimensions.width / 2;
-    const centerY = dimensions.height / 2;
+    centerX = dimensions.width / 2;
+    centerY = dimensions.height / 2;
     for (let y = centerY; y < dimensions.height + 40; y += 40) linesToRender.push({ isCenter: y === centerY });
     for (let y = centerY - 40; y > -40; y -= 40) linesToRender.push({ isCenter: false });
     for (let x = centerX; x < dimensions.width + 40; x += 40) linesToRender.push({ isCenter: x === centerX });
@@ -201,6 +204,14 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
               opacity={line.isCenter ? "0.8" : "0.5"}
             />
           ))}
+
+          <HeroBackgroundAnimations 
+            dimensions={dimensions}
+            centerX={centerX}
+            centerY={centerY}
+            gridSize={40}
+          />
+
           <circle 
             ref={waveRingRef} 
             cx="50%" cy="50%" r="0" fill="none" stroke="#A0D8EF" strokeWidth="3" 
