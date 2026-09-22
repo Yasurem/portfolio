@@ -1,0 +1,83 @@
+import asyncio
+from google.antigravity import Agent, LocalAgentConfig, types
+
+async def main():
+    """
+    The main execution harness for the Portfolio Multi-Agent Workflow.
+    This script defines the Org Chart and routes messages using the AGY SDK.
+    """
+    
+    # --- 1. Define the Department Leads (Subagents) ---
+    
+    frontend_lead = types.SubagentConfig(
+        name="frontend_tech_lead",
+        description="Manages Next.js frontend, React components, 3D (R3F), and animations (GSAP).",
+        system_instruction=(
+            "You are the Frontend Tech Lead. "
+            "Coordinate UI/UX tasks, 3D graphics, and animations. "
+            "Focus on the Next.js architecture and performance optimization."
+        ),
+        capabilities=types.SubagentCapabilities(
+            agent_behavior=types.AgentBehavior.AUTONOMOUS,
+            enable_bash_tools=True,
+            enable_file_tools=True
+        )
+    )
+
+    # --- Backend, QA, Tech Debt, and Research agents temporarily removed for Phase 1 testing ---
+
+    # --- 2. Configure the Orchestrator (Lead Architect) ---
+    
+    orchestrator_config = LocalAgentConfig(
+        system_instruction=(
+            "You are the Lead Architect and Orchestrator. "
+            "Your job is to break down the user's high-level requests and delegate frontend tasks "
+            "to your specialized department lead (frontend_tech_lead). "
+            "Wait for their responses, synthesize the results, and present the final plan. "
+            "CRITICAL: Always clearly explain to the user the decisions you are making, "
+            "how you are delegating tasks, and the reasoning behind those decisions."
+        ),
+        subagents=[frontend_lead],
+        # The Orchestrator automatically loads all skills in this directory
+        skills_paths=["/Users/macbook/Desktop/1_Programming/Portfolio/.agents/skills"],
+        capabilities=types.CapabilitiesConfig(
+            enable_subagents=True,
+            enable_bash_tools=True,
+            enable_file_tools=True
+        ),
+        budget_config=types.BudgetConfig(
+            max_model_calls=20,
+            max_total_tokens=100_000,
+        ),
+        retry_config=types.RetryConfig.benchmark()
+    )
+
+    # --- 3. Run the Harness ---
+    
+    print("🚀 Starting the Multi-Agent Workflow Harness...")
+    async with Agent(orchestrator_config) as agent:
+        print("Lead Architect is online and ready.")
+        
+        # Example prompt simulating a user request
+        user_request = (
+            "We need to add a new 3D animated hero section to our Next.js frontend."
+        )
+        print(f"\n[User Request]: {user_request}\n")
+        print("Routing request to Lead Architect...")
+        
+        response = await agent.chat(
+            f"Please coordinate your team to handle this request. "
+            f"Provide a brief plan of how you delegated it: {user_request}"
+        )
+        
+        print("\n--- Final Output from Lead Architect ---")
+        print(await response.text())
+
+        # Check if the budget was reached
+        if response.stop_reason == types.StopReason.MAX_MODEL_CALLS_EXCEEDED:
+            print("\n⚠️  [ALERT]: Session safely halted because it reached the maximum of 20 model calls.")
+        elif response.stop_reason == types.StopReason.MAX_TOTAL_TOKENS_EXCEEDED:
+            print("\n⚠️  [ALERT]: Session safely halted because it reached the 100,000 token budget.")
+
+if __name__ == "__main__":
+    asyncio.run(main())

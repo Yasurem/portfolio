@@ -1,0 +1,67 @@
+'use client';
+
+import React, { useRef, forwardRef } from 'react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+
+const HeroContent = forwardRef<HTMLDivElement>((props, ref) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useGSAP(() => {
+    gsap.to('.hero-content-item', {
+      y: 0,
+      opacity: 1,
+      duration: 1.2,
+      ease: 'expo.out',
+      delay: 2.3,
+      stagger: 0.15
+    });
+  }, { scope: containerRef });
+
+  const setRefs = (node: HTMLDivElement | null) => {
+    containerRef.current = node;
+    if (typeof ref === 'function') {
+      ref(node);
+    } else if (ref) {
+      ref.current = node;
+    }
+  };
+
+  return (
+    <div ref={setRefs} className="relative z-10 flex flex-col items-center justify-center px-4 md:px-8 pointer-events-none w-full h-full overflow-hidden">
+      
+      {/* Main Heading Entity */}
+      <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max">
+        <h1 className="text-6xl md:text-8xl font-extrabold text-white mb-6 tracking-tighter">
+          Joemarc <span className="text-[#FF0000]">Castillo</span>
+        </h1>
+      </div>
+
+      {/* Description Entity */}
+      <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max text-lg md:text-xl text-gray-400 font-light tracking-wide">
+        Initializing advanced vector sequences.
+      </div>
+      <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max text-lg md:text-xl text-gray-400 font-light tracking-wide">
+        Building digital experiences with precision,
+      </div>
+      <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max text-lg md:text-xl text-gray-400 font-light tracking-wide mb-10">
+        performance, and aesthetic clarity.
+      </div>
+
+      {/* Buttons Entity */}
+      <div className="hero-entity hero-content-item flex gap-6 pointer-events-auto opacity-0 translate-y-10 w-max">
+        <button className="px-8 py-4 bg-[#800000] text-white rounded-sm font-semibold tracking-widest uppercase text-sm hover:bg-[#FF0000] transition-colors duration-300">
+          Initialize Sequence
+        </button>
+        <button className="px-8 py-4 border border-[#800000] text-[#FF0000] rounded-sm font-semibold tracking-widest uppercase text-sm hover:bg-[#800000]/10 transition-colors duration-300">
+          View Logs
+        </button>
+      </div>
+
+    </div>
+  );
+});
+
+HeroContent.displayName = 'HeroContent';
+
+export default HeroContent;
