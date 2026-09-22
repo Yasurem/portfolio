@@ -27,7 +27,7 @@ const equations: MathEquationDef[] = [
     name: 'Gradient Descent',
     func: (x) => (x * x) / 10,
     derivative: (x) => x / 5,
-    range: [-15, 15],
+    range: [-8, 8],
     color: '#FF4136',
     showTangent: true
   },
@@ -38,7 +38,7 @@ const equations: MathEquationDef[] = [
       const f = 1 / (1 + Math.exp(-x));
       return f * (1 - f);
     },
-    range: [-10, 10],
+    range: [-6, 6],
     color: '#0074D9',
     showTangent: true
   },
@@ -46,7 +46,7 @@ const equations: MathEquationDef[] = [
     name: 'Tanh',
     func: (x) => Math.tanh(x),
     derivative: (x) => 1 - Math.pow(Math.tanh(x), 2),
-    range: [-10, 10],
+    range: [-6, 6],
     color: '#FF851B',
     showTangent: true
   },
@@ -54,7 +54,7 @@ const equations: MathEquationDef[] = [
     name: 'ReLU',
     func: (x) => Math.max(0, x),
     derivative: (x) => x > 0 ? 1 : 0,
-    range: [-10, 10],
+    range: [-6, 6],
     color: '#2ECC40',
     showTangent: false // Disabled for straight lines
   },
@@ -65,7 +65,7 @@ const equations: MathEquationDef[] = [
       const exp_nx = Math.exp(-x);
       return (1 + exp_nx + x * exp_nx) / Math.pow(1 + exp_nx, 2);
     },
-    range: [-10, 10],
+    range: [-6, 6],
     color: '#B10DC9',
     showTangent: true
   },
@@ -73,7 +73,7 @@ const equations: MathEquationDef[] = [
     name: 'Gaussian',
     func: (x) => 5 * Math.exp(-(x * x) / 8),
     derivative: (x) => 5 * Math.exp(-(x * x) / 8) * (-x / 4),
-    range: [-15, 15],
+    range: [-8, 8],
     color: '#FFDC00',
     showTangent: false // Disabled as requested
   },
@@ -81,7 +81,7 @@ const equations: MathEquationDef[] = [
     name: 'Damped Convergence',
     func: (x) => Math.sin(x) * Math.exp(-0.15 * x),
     derivative: (x) => Math.exp(-0.15 * x) * (Math.cos(x) - 0.15 * Math.sin(x)),
-    range: [-5, 20],
+    range: [-2, 12],
     color: '#39CCCC',
     showTangent: true
   }
@@ -266,23 +266,17 @@ export default function HeroBackgroundAnimations({ dimensions, centerX, centerY,
         else if (activeSides.includes('right') && !activeSides.includes('left')) side = 'left';
         else side = Math.random() > 0.5 ? 'left' : 'right'; 
 
-        // 3. Dynamic Range Offset
-        // This mathematically guarantees the equation's ENTIRE X-range never crosses the center (X=0)
-        // keeping it completely isolated to its assigned hemisphere.
-        const [minX, maxX] = eqDef.range;
+        // 3. Exact Screen Placement (Hemisphere Centering)
         let offsetX = 0;
-        
-        if (side === 'right') {
-          // Range must be strictly positive: minX + offsetX > 2 
-          const requiredOffset = -minX + 2; 
-          offsetX = requiredOffset + Math.random() * 5; 
-        } else {
-          // Range must be strictly negative: maxX + offsetX < -2
-          const requiredOffset = -maxX - 2;
-          offsetX = requiredOffset - Math.random() * 5;
-        }
+        let offsetY = (Math.random() - 0.5) * 6; // Keep Y closer to the vertical center
 
-        const offsetY = (Math.random() - 0.5) * 10; // Y height can still vary randomly
+        if (side === 'right') {
+          // Right Hemisphere: spawn between +8 and +12 units (approx 320px to 480px right of center)
+          offsetX = 8 + Math.random() * 4;
+        } else {
+          // Left Hemisphere: spawn between -8 and -12 units (approx -320px to -480px left of center)
+          offsetX = -8 - Math.random() * 4;
+        }
 
         const newEq: ActiveEquation = {
           id: idCounter.current++,
