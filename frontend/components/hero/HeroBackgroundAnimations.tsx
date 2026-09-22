@@ -24,27 +24,58 @@ interface MathEquationDef {
 const equations: MathEquationDef[] = [
   {
     name: 'Gradient Descent',
-    func: (x) => (x * x) / 8,
-    derivative: (x) => x / 4,
+    func: (x) => (x * x) / 10,
+    derivative: (x) => x / 5,
     range: [-15, 15],
-    color: '#FF0000'
+    color: '#FF4136'
   },
   {
-    name: 'Sigmoid Gradient',
+    name: 'Sigmoid',
     func: (x) => 1 / (1 + Math.exp(-x)),
     derivative: (x) => {
       const f = 1 / (1 + Math.exp(-x));
       return f * (1 - f);
     },
     range: [-10, 10],
-    color: '#A0D8EF'
+    color: '#0074D9'
+  },
+  {
+    name: 'Tanh',
+    func: (x) => Math.tanh(x),
+    derivative: (x) => 1 - Math.pow(Math.tanh(x), 2),
+    range: [-10, 10],
+    color: '#FF851B'
+  },
+  {
+    name: 'ReLU',
+    func: (x) => Math.max(0, x),
+    derivative: (x) => x > 0 ? 1 : 0,
+    range: [-10, 10],
+    color: '#2ECC40'
+  },
+  {
+    name: 'Swish',
+    func: (x) => x / (1 + Math.exp(-x)),
+    derivative: (x) => {
+      const exp_nx = Math.exp(-x);
+      return (1 + exp_nx + x * exp_nx) / Math.pow(1 + exp_nx, 2);
+    },
+    range: [-10, 10],
+    color: '#B10DC9'
+  },
+  {
+    name: 'Gaussian',
+    func: (x) => 5 * Math.exp(-(x * x) / 8),
+    derivative: (x) => 5 * Math.exp(-(x * x) / 8) * (-x / 4),
+    range: [-15, 15],
+    color: '#FFDC00'
   },
   {
     name: 'Damped Convergence',
-    func: (x) => Math.sin(x) * Math.exp(-0.2 * x),
-    derivative: (x) => Math.exp(-0.2 * x) * (Math.cos(x) - 0.2 * Math.sin(x)),
-    range: [-5, 15],
-    color: '#800000'
+    func: (x) => Math.sin(x) * Math.exp(-0.15 * x),
+    derivative: (x) => Math.exp(-0.15 * x) * (Math.cos(x) - 0.15 * Math.sin(x)),
+    range: [-5, 20],
+    color: '#39CCCC'
   }
 ];
 
@@ -53,9 +84,11 @@ interface ActiveEquation {
   def: MathEquationDef;
   offsetX: number;
   offsetY: number;
+  quadrant: number;
 }
 
 interface ComplexMathEquationProps {
+  id: number;
   equation: MathEquationDef;
   centerX: number;
   centerY: number;
@@ -66,10 +99,11 @@ interface ComplexMathEquationProps {
 }
 
 function ComplexMathEquation(props: ComplexMathEquationProps) {
-  const { equation, onComplete } = props;
+  const { id, equation, onComplete } = props;
   
   const groupRef = useRef<SVGGElement>(null);
-  const pointRef = useRef<SVGCircleElement>(null);
+  const dotGroupRef = useRef<SVGGElement>(null);
+  const pathGroupRef = useRef<SVGGElement>(null);
   const tangentRef = useRef<SVGLineElement>(null);
 
   // Use a ref for props to access latest values in GSAP onUpdate without restarting animation on resize
@@ -98,46 +132,38 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
   }, [equation, props.centerX, props.centerY, props.gridSize, props.offsetX, props.offsetY]);
 
   useGSAP(() => {
-    if (!pointRef.current || !tangentRef.current || !groupRef.current) return;
+    if (!dotGroupRef.current || !tangentRef.current || !groupRef.current || !pathGroupRef.current) return;
     
-    // Animation for fade in
-    gsap.fromTo(groupRef.current, { opacity: 0 }, { opacity: 1, duration: 1, ease: 'power2.out' });
-
     const [minX, maxX] = equation.range;
-    const obj = { val: minX };
     
-    gsap.to(obj, {
-      val: maxX,
-      duration: 6,
-      ease: "power1.inOut",
-      onUpdate: () => {
-        const p = propsRef.current;
-        const currentX = obj.val;
-        const currentY = equation.func(currentX);
-        const m = equation.derivative(currentX);
+    // Set initial position of the dot to exactly the center of the screen
+    const startScreenX = propsRef.current.centerX;
+    const startScreenY = propsRef.current.centerY;
+    
+    gsap.set(dotGroupRef.current, { x: startScreenX, y: startScreenY });
+    gsap.set(pathGroupRef.current, { opacity: 0 });
+    gsap.set(groupRef.current, { opacity: 1 });
 
-        const screenX = p.centerX + ((currentX + p.offsetX) * p.gridSize);
-        const screenY = p.centerY - ((currentY + p.offsetY) * p.gridSize);
+    // Calculate tangent initial coords to prevent flash
+    const p = propsRef.current;
+    const initialMathY = equation.func(minX);
+    const mInitial = equation.derivative(minX);
+    const dx = 1.5 / Math.sqrt(1 + mInitial * mInitial);
+    const dy = mInitial * dx;
 
-        pointRef.current?.setAttribute('cx', screenX.toString());
-        pointRef.current?.setAttribute('cy', screenY.toString());
+    const x1 = p.centerX + ((minX - dx + p.offsetX) * p.gridSize);
+    const y1 = p.centerY - ((initialMathY - dy + p.offsetY) * p.gridSize);
+    const x2 = p.centerX + ((minX + dx + p.offsetX) * p.gridSize);
+    const y2 = p.centerY - ((initialMathY + dy + p.offsetY) * p.gridSize);
 
-        // Tangent line length logic in math units
-        const dx = 1.5 / Math.sqrt(1 + m * m);
-        const dy = m * dx;
+    tangentRef.current?.setAttribute('x1', x1.toString());
+    tangentRef.current?.setAttribute('y1', y1.toString());
+    tangentRef.current?.setAttribute('x2', x2.toString());
+    tangentRef.current?.setAttribute('y2', y2.toString());
 
-        const x1 = p.centerX + ((currentX - dx + p.offsetX) * p.gridSize);
-        const y1 = p.centerY - ((currentY - dy + p.offsetY) * p.gridSize);
-        const x2 = p.centerX + ((currentX + dx + p.offsetX) * p.gridSize);
-        const y2 = p.centerY - ((currentY + dy + p.offsetY) * p.gridSize);
-
-        tangentRef.current?.setAttribute('x1', x1.toString());
-        tangentRef.current?.setAttribute('y1', y1.toString());
-        tangentRef.current?.setAttribute('x2', x2.toString());
-        tangentRef.current?.setAttribute('y2', y2.toString());
-      },
+    const tl = gsap.timeline({
       onComplete: () => {
-        // Fade out then call onComplete
+        // Fade out entire group then call onComplete
         gsap.to(groupRef.current, {
           opacity: 0,
           duration: 1,
@@ -147,13 +173,77 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
       }
     });
 
-  }, { scope: groupRef, dependencies: [equation] }); // Only re-run if equation completely changes
+    const targetScreenX = p.centerX + ((minX + p.offsetX) * p.gridSize);
+    const targetScreenY = p.centerY - ((initialMathY + p.offsetY) * p.gridSize);
+
+    // 1. Splitting from center
+    tl.to(dotGroupRef.current, {
+      x: targetScreenX,
+      y: targetScreenY,
+      duration: 0.8,
+      ease: 'power3.out'
+    });
+
+    // 2. Fade in path & tangent
+    tl.to(pathGroupRef.current, {
+      opacity: 1,
+      duration: 0.5,
+      ease: 'power2.out'
+    }, "-=0.3");
+
+    // 3. Move along curve
+    const obj = { val: minX };
+    tl.to(obj, {
+      val: maxX,
+      duration: 6,
+      ease: "power1.inOut",
+      onUpdate: () => {
+        const currP = propsRef.current;
+        const currentX = obj.val;
+        const currentY = equation.func(currentX);
+        const m = equation.derivative(currentX);
+
+        const screenX = currP.centerX + ((currentX + currP.offsetX) * currP.gridSize);
+        const screenY = currP.centerY - ((currentY + currP.offsetY) * currP.gridSize);
+
+        gsap.set(dotGroupRef.current, { x: screenX, y: screenY });
+
+        // Tangent line length logic in math units
+        const currentDx = 1.5 / Math.sqrt(1 + m * m);
+        const currentDy = m * currentDx;
+
+        const curX1 = currP.centerX + ((currentX - currentDx + currP.offsetX) * currP.gridSize);
+        const curY1 = currP.centerY - ((currentY - currentDy + currP.offsetY) * currP.gridSize);
+        const curX2 = currP.centerX + ((currentX + currentDx + currP.offsetX) * currP.gridSize);
+        const curY2 = currP.centerY - ((currentY + currentDy + currP.offsetY) * currP.gridSize);
+
+        tangentRef.current?.setAttribute('x1', curX1.toString());
+        tangentRef.current?.setAttribute('y1', curY1.toString());
+        tangentRef.current?.setAttribute('x2', curX2.toString());
+        tangentRef.current?.setAttribute('y2', curY2.toString());
+      }
+    });
+
+  }, { scope: groupRef, dependencies: [equation] });
 
   return (
     <g ref={groupRef} style={{ opacity: 0 }}>
-      <path d={d} fill="none" stroke={equation.color} strokeWidth="1.5" opacity={0.3} />
-      <line ref={tangentRef} stroke={equation.color} strokeWidth="2" opacity={0.8} />
-      <circle ref={pointRef} r="4" fill="#000" stroke={equation.color} strokeWidth="2" />
+      <defs>
+        <radialGradient id={`glow-${id}`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ff3333" stopOpacity={0.6} />
+          <stop offset="100%" stopColor="#ff3333" stopOpacity={0} />
+        </radialGradient>
+      </defs>
+      
+      <g ref={pathGroupRef}>
+        <path d={d} fill="none" stroke={equation.color} strokeWidth="1.5" opacity={0.3} />
+        <line ref={tangentRef} stroke={equation.color} strokeWidth="2" opacity={0.8} />
+      </g>
+      
+      <g ref={dotGroupRef}>
+        <circle r="40" fill={`url(#glow-${id})`} />
+        <circle r="4" fill="#ff3333" />
+      </g>
     </g>
   );
 }
@@ -170,13 +260,44 @@ export default function HeroBackgroundAnimations({ dimensions, centerX, centerY,
         // Strictly limit concurrency to 2 equations
         if (prev.length >= 2) return prev;
         
+        const usedQuadrants = prev.map(eq => eq.quadrant);
+        const availableQuadrants = [1, 2, 3, 4].filter(q => !usedQuadrants.includes(q));
+        if (availableQuadrants.length === 0) return prev;
+
+        const quadrant = availableQuadrants[Math.floor(Math.random() * availableQuadrants.length)];
+        
+        let offsetX = 0;
+        let offsetY = 0;
+        
+        const xRand = 5 + Math.random() * 8; // 5 to 13
+        const yRand = 5 + Math.random() * 6; // 5 to 11
+
+        switch (quadrant) {
+          case 1:
+            offsetX = xRand;
+            offsetY = yRand;
+            break;
+          case 2:
+            offsetX = -xRand;
+            offsetY = yRand;
+            break;
+          case 3:
+            offsetX = -xRand;
+            offsetY = -yRand;
+            break;
+          case 4:
+            offsetX = xRand;
+            offsetY = -yRand;
+            break;
+        }
+
         const eqDef = equations[Math.floor(Math.random() * equations.length)];
         const newEq: ActiveEquation = {
           id: idCounter.current++,
           def: eqDef,
-          // Random spatial offsets to prevent overlap
-          offsetX: (Math.random() - 0.5) * 15,
-          offsetY: (Math.random() - 0.5) * 10,
+          offsetX,
+          offsetY,
+          quadrant
         };
         return [...prev, newEq];
       });
@@ -204,6 +325,7 @@ export default function HeroBackgroundAnimations({ dimensions, centerX, centerY,
       {activeEquations.map((eq) => (
         <ComplexMathEquation
           key={eq.id}
+          id={eq.id}
           equation={eq.def}
           centerX={centerX}
           centerY={centerY}
