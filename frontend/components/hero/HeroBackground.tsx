@@ -23,7 +23,7 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
     const { mouseOpacity, waveOpacity, time } = animStateRef.current;
     
     // Base mask for the mouse cursor spotlight
-    let finalMask = `radial-gradient(circle 350px at ${x}px ${y}px, rgba(0,0,0,${mouseOpacity}) 0%, rgba(0,0,0,0) 80%)`;
+    let finalMask = `radial-gradient(circle 350px at ${x}px ${y}px, rgba(0,0,0,${mouseOpacity}) 0%, rgba(0,0,0,0) 100%)`;
     
     const waveFront = waveSpeed * time;
     if (waveOpacity > 0 && waveFront > 0) {
@@ -32,6 +32,17 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
       const waveMask = `radial-gradient(circle at 50% 50%, rgba(0,0,0,${waveOpacity}) ${Math.max(0, waveFront - 20)}px, rgba(0,0,0,0) ${waveFront + 20}px)`;
       finalMask = `${finalMask}, ${waveMask}`;
     }
+
+    // Add exactly the same spotlight effect for the mathematical moving dots
+    const mathDots = document.querySelectorAll('.math-dot');
+    mathDots.forEach((dot) => {
+      const cx = dot.getAttribute('cx');
+      const cy = dot.getAttribute('cy');
+      if (cx && cy) {
+        const dotMask = `radial-gradient(circle 350px at ${cx}px ${cy}px, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)`;
+        finalMask = `${finalMask}, ${dotMask}`;
+      }
+    });
 
     gridContainerRef.current.style.maskImage = finalMask;
     gridContainerRef.current.style.WebkitMaskImage = finalMask;
@@ -47,7 +58,7 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
         const rect = containerRef.current.getBoundingClientRect();
         mousePosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
         
-        // Only trigger a manual mask update if the high-speed animation loop is done
+        // Manual update fallback if GSAP ticker isn't catching it for some reason
         if (!animStateRef.current.isActive) {
           updateMaskOnly(); 
         }
@@ -58,9 +69,13 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
     const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', handleResize);
     
+    // Bind mask updates to the GSAP ticker so the spotlight automatically tracks the moving equations at 60fps
+    gsap.ticker.add(updateMaskOnly);
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
+      gsap.ticker.remove(updateMaskOnly);
     };
   }, []);
 

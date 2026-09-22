@@ -43,7 +43,7 @@ const equations: MathEquationDef[] = [
     name: 'Tanh',
     func: (x) => Math.tanh(x),
     derivative: (x) => 1 - Math.pow(Math.tanh(x), 2),
-    range: [-10, 10],
+    range: [-20, 20],
     color: '#FF851B'
   },
   {
@@ -102,9 +102,9 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
   const { id, equation, onComplete } = props;
   
   const groupRef = useRef<SVGGElement>(null);
-  const dotGroupRef = useRef<SVGGElement>(null);
   const pathGroupRef = useRef<SVGGElement>(null);
   const tangentRef = useRef<SVGLineElement>(null);
+  const pointRef = useRef<SVGCircleElement>(null);
 
   // Use a ref for props to access latest values in GSAP onUpdate without restarting animation on resize
   const propsRef = useRef(props);
@@ -132,7 +132,7 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
   }, [equation, props.centerX, props.centerY, props.gridSize, props.offsetX, props.offsetY]);
 
   useGSAP(() => {
-    if (!dotGroupRef.current || !tangentRef.current || !groupRef.current || !pathGroupRef.current) return;
+    if (!tangentRef.current || !groupRef.current || !pathGroupRef.current || !pointRef.current) return;
     
     const [minX, maxX] = equation.range;
     
@@ -140,7 +140,7 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
     const startScreenX = propsRef.current.centerX;
     const startScreenY = propsRef.current.centerY;
     
-    gsap.set(dotGroupRef.current, { x: startScreenX, y: startScreenY });
+    gsap.set(pointRef.current, { attr: { cx: startScreenX, cy: startScreenY } });
     gsap.set(pathGroupRef.current, { opacity: 0 });
     gsap.set(groupRef.current, { opacity: 1 });
 
@@ -177,9 +177,8 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
     const targetScreenY = p.centerY - ((initialMathY + p.offsetY) * p.gridSize);
 
     // 1. Splitting from center
-    tl.to(dotGroupRef.current, {
-      x: targetScreenX,
-      y: targetScreenY,
+    tl.to(pointRef.current, {
+      attr: { cx: targetScreenX, cy: targetScreenY },
       duration: 0.8,
       ease: 'power3.out'
     });
@@ -206,7 +205,8 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
         const screenX = currP.centerX + ((currentX + currP.offsetX) * currP.gridSize);
         const screenY = currP.centerY - ((currentY + currP.offsetY) * currP.gridSize);
 
-        gsap.set(dotGroupRef.current, { x: screenX, y: screenY });
+        pointRef.current?.setAttribute('cx', screenX.toString());
+        pointRef.current?.setAttribute('cy', screenY.toString());
 
         // Tangent line length logic in math units
         const currentDx = 1.5 / Math.sqrt(1 + m * m);
@@ -228,22 +228,12 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
 
   return (
     <g ref={groupRef} style={{ opacity: 0 }}>
-      <defs>
-        <radialGradient id={`glow-${id}`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#ff3333" stopOpacity={0.6} />
-          <stop offset="100%" stopColor="#ff3333" stopOpacity={0} />
-        </radialGradient>
-      </defs>
-      
       <g ref={pathGroupRef}>
         <path d={d} fill="none" stroke={equation.color} strokeWidth="1.5" opacity={0.3} />
         <line ref={tangentRef} stroke={equation.color} strokeWidth="2" opacity={0.8} />
       </g>
-      
-      <g ref={dotGroupRef}>
-        <circle r="40" fill={`url(#glow-${id})`} />
-        <circle r="4" fill="#ff3333" />
-      </g>
+      {/* Added class 'math-dot' so HeroBackground.tsx can find it and add a spotlight mask */}
+      <circle ref={pointRef} className="math-dot" r="4" fill="#ff3333" />
     </g>
   );
 }
@@ -254,6 +244,9 @@ export default function HeroBackgroundAnimations({ dimensions, centerX, centerY,
 
   useEffect(() => {
     if (dimensions.width === 0 || dimensions.height === 0) return;
+
+    let interval: NodeJS.Timeout;
+    let timeout: NodeJS.Timeout;
 
     const spawnEquation = () => {
       setActiveEquations((prev) => {
@@ -269,8 +262,8 @@ export default function HeroBackgroundAnimations({ dimensions, centerX, centerY,
         let offsetX = 0;
         let offsetY = 0;
         
-        const xRand = 5 + Math.random() * 8; // 5 to 13
-        const yRand = 5 + Math.random() * 6; // 5 to 11
+        const xRand = 2 + Math.random() * 8; // 5 to 13
+        const yRand = 2 + Math.random() * 6; // 5 to 11
 
         switch (quadrant) {
           case 1:
@@ -303,14 +296,19 @@ export default function HeroBackgroundAnimations({ dimensions, centerX, centerY,
       });
     };
 
-    // Staggered spawning
-    const interval = setInterval(spawnEquation, 2000);
-    spawnEquation(); // Spawn first immediately
-    const timeout = setTimeout(spawnEquation, 1000); // Try spawning second one after 1s
+    const startSpawning = () => {
+      spawnEquation(); // Spawn first immediately
+      timeout = setTimeout(spawnEquation, 1000); // Try spawning second one after 1s
+      interval = setInterval(spawnEquation, 2000); // Staggered spawning
+    };
+
+    // Wait exactly 3 seconds for the initial wave trailing light to fade out
+    const initialDelay = setTimeout(startSpawning, 3000);
 
     return () => {
-      clearInterval(interval);
+      clearTimeout(initialDelay);
       clearTimeout(timeout);
+      clearInterval(interval);
     };
   }, [dimensions]);
 
