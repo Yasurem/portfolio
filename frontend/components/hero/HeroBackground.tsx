@@ -23,7 +23,7 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
     const { mouseOpacity, waveOpacity, time } = animStateRef.current;
     
     // Base mask for the mouse cursor spotlight
-    let finalMask = `radial-gradient(circle 350px at ${x}px ${y}px, rgba(0,0,0,${mouseOpacity}) 0%, rgba(0,0,0,0) 100%)`;
+    let finalMask = `radial-gradient(circle 350px at ${x}px ${y}px, rgba(0,0,0,${mouseOpacity}) 0%, rgba(0,0,0,0) 80%)`;
     
     const waveFront = waveSpeed * time;
     if (waveOpacity > 0 && waveFront > 0) {
