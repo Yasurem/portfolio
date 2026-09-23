@@ -230,8 +230,8 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
   return (
     <g ref={groupRef} style={{ opacity: 0 }}>
       <g ref={pathGroupRef}>
-        <path d={d} fill="none" stroke={equation.color} strokeWidth="1.5" opacity={0.3} />
-        {equation.showTangent && <line ref={tangentRef} stroke={equation.color} strokeWidth="2" opacity={0.8} />}
+        <path className="math-path" d={d} fill="none" stroke={equation.color} strokeWidth="1.5" opacity={0.3} />
+        {equation.showTangent && <line className="math-path" ref={tangentRef} stroke={equation.color} strokeWidth="2" opacity={0.8} />}
       </g>
       <circle ref={pointRef} className="math-dot" r="4" fill="#ff3333" />
     </g>
