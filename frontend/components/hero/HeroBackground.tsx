@@ -222,7 +222,8 @@ const HeroBackground = forwardRef<HeroBackgroundRef, {}>((props, ref) => {
       ref={containerRef} 
       className="absolute inset-0 w-full h-full flex items-center justify-center bg-transparent overflow-hidden"
     >
-      <div ref={gridContainerRef} className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 z-0 opacity-30 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+      <div ref={gridContainerRef} className="absolute inset-0 pointer-events-none z-0">
         <svg className="w-full h-full">
           {linesToRender.map((line, i) => (
             <path
@@ -231,23 +232,25 @@ const HeroBackground = forwardRef<HeroBackgroundRef, {}>((props, ref) => {
               d="" 
               fill="none"
               stroke="color-mix(in srgb, var(--color-charcoal) 80%, white)" 
-              strokeWidth={line.isCenter ? "1.5" : "1"}
-              opacity={line.isCenter ? "1" : ".5"}
+              strokeWidth={line.isCenter ? "0.4" : "0.2"}
+              opacity={line.isCenter ? "0.7" : "0.3"}
             />
           ))}
 
-          <MathEquations 
-            dimensions={dimensions}
-            centerX={centerX}
-            centerY={centerY}
-            gridSize={40}
-            dotPositionsRef={dotPositionsRef}
-          />
+          <g className="math-equations-wrapper">
+            <MathEquations 
+              dimensions={dimensions}
+              centerX={centerX}
+              centerY={centerY}
+              gridSize={40}
+              dotPositionsRef={dotPositionsRef}
+            />
+          </g>
 
           <circle 
             ref={waveRingRef} 
-            cx="50%" cy="50%" r="0" fill="none" stroke="var(--color-primary)" strokeWidth="10" 
-            opacity="0" style={{ filter: 'blur(4px)' }} 
+            cx="50%" cy="50%" r="0" fill="none" stroke="var(--color-primary)" strokeWidth="2" 
+            opacity="0" style={{ filter: 'blur(2px)' }} 
           />
         </svg>
       </div>
