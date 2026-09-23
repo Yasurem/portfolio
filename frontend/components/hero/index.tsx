@@ -25,15 +25,15 @@ export default function Hero() {
     }
 
     // 0. Ensure SVG transforms rotate from the exact center of the container
-    gsap.set('.split-orb-top, .split-orb-bottom', { 
-      transformOrigin: '50% 50%',
-      opacity: 0
-    });
+    // gsap.set('.split-orb-top, .split-orb-bottom', { 
+    //   transformOrigin: '50% 50%',
+    //   opacity: 0
+    // });
 
     // Idle Animation: Rotate multiple overlapping segmented rings at different speeds
-    gsap.to('.idle-ring-1', { rotation: 360, transformOrigin: '50% 50%', duration: 40, repeat: -1, ease: 'none' });
-    gsap.to('.idle-ring-2', { rotation: -360, transformOrigin: '50% 50%', duration: 60, repeat: -1, ease: 'none' });
-    gsap.to('.idle-ring-3', { rotation: 360, transformOrigin: '50% 50%', duration: 25, repeat: -1, ease: 'none' });
+    // gsap.to('.idle-ring-1', { rotation: 360, transformOrigin: '50% 50%', duration: 40, repeat: -1, ease: 'none' });
+    // gsap.to('.idle-ring-2', { rotation: -360, transformOrigin: '50% 50%', duration: 60, repeat: -1, ease: 'none' });
+    // gsap.to('.idle-ring-3', { rotation: 360, transformOrigin: '50% 50%', duration: 25, repeat: -1, ease: 'none' });
 
     const masterTl = gsap.timeline({
       scrollTrigger: {
@@ -52,45 +52,45 @@ export default function Hero() {
 
     // Hide normal math paths so the UI stays clean
     masterTl.to('.math-equations-wrapper', { opacity: 0, duration: 0.1 }, 0);
-    masterTl.to('.portrait-frame-svg', { opacity: 1, duration: 0.1 }, 0);
+    // masterTl.to('.portrait-frame-svg', { opacity: 1, duration: 0.1 }, 0);
 
     // Fade in center orb (which is animated positionally by Background's timeline)
-    masterTl.set('.split-orb-top, .split-orb-bottom', { opacity: 1 }, 0.4);
-    masterTl.set('.frame-circle-top, .frame-circle-bottom', { opacity: 1 }, 0.4);
+    // masterTl.set('.split-orb-top, .split-orb-bottom', { opacity: 1 }, 0.4);
+    // masterTl.set('.frame-circle-top, .frame-circle-bottom', { opacity: 1 }, 0.4);
 
     // 4. Reveal two SVG arcs and translate the split orbs
-    masterTl.fromTo('.frame-circle-top', 
-      { strokeDashoffset: 100 }, 
-      { strokeDashoffset: 25, duration: 0.8, ease: 'power2.inOut' }, 
-      0.4
-    );
-    masterTl.fromTo('.split-orb-top', 
-      { rotation: 0 }, 
-      { rotation: 270, duration: 0.8, ease: 'power2.inOut' }, 
-      0.4
-    );
+    // masterTl.fromTo('.frame-circle-top', 
+    //   { strokeDashoffset: 100 }, 
+    //   { strokeDashoffset: 25, duration: 0.8, ease: 'power2.inOut' }, 
+    //   0.4
+    // );
+    // masterTl.fromTo('.split-orb-top', 
+    //   { rotation: 0 }, 
+    //   { rotation: 270, duration: 0.8, ease: 'power2.inOut' }, 
+    //   0.4
+    // );
 
-    masterTl.fromTo('.frame-circle-bottom', 
-      { strokeDashoffset: -100 }, 
-      { strokeDashoffset: -75, duration: 0.8, ease: 'power2.inOut' }, 
-      0.4
-    );
-    masterTl.fromTo('.split-orb-bottom', 
-      { rotation: 0 }, 
-      { rotation: -90, duration: 0.8, ease: 'power2.inOut' }, 
-      0.4
-    );
+    // masterTl.fromTo('.frame-circle-bottom', 
+    //   { strokeDashoffset: -100 }, 
+    //   { strokeDashoffset: -75, duration: 0.8, ease: 'power2.inOut' }, 
+    //   0.4
+    // );
+    // masterTl.fromTo('.split-orb-bottom', 
+    //   { rotation: 0 }, 
+    //   { rotation: -90, duration: 0.8, ease: 'power2.inOut' }, 
+    //   0.4
+    // );
 
     // 5. Orbs combine at the bottom (270deg), flare up, and STAY PERSISTENT
-    masterTl.to('.split-orb-top, .split-orb-bottom', { 
-      scale: 1.8, 
-      duration: 0.15, 
-      ease: 'power1.out' 
-    }, 1.2);
+    // masterTl.to('.split-orb-top, .split-orb-bottom', { 
+    //   scale: 1.8, 
+    //   duration: 0.15, 
+    //   ease: 'power1.out' 
+    // }, 1.2);
 
     // Crossfade the solid drawing border into the final dashed segmented glowing border
-    masterTl.to('.frame-circle-top, .frame-circle-bottom', { opacity: 0, duration: 0.2 }, 1.2);
-    masterTl.fromTo('.idle-rings-group', { opacity: 0 }, { opacity: 1, duration: 0.2 }, 1.2);
+    // masterTl.to('.frame-circle-top, .frame-circle-bottom', { opacity: 0, duration: 0.2 }, 1.2);
+    // masterTl.fromTo('.idle-rings-group', { opacity: 0 }, { opacity: 1, duration: 0.2 }, 1.2);
 
   }, { scope: containerRef });
 
@@ -99,6 +99,7 @@ export default function Hero() {
       <HeroBackground ref={bgRef} />
       
       <HeroContent ref={textRef}>
+        {/* 
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 portrait-frame-svg" viewBox="0 0 100 100" style={{ opacity: 0 }}>
           
           <path 
@@ -175,6 +176,7 @@ export default function Hero() {
             className="portrait-img opacity-0 object-cover"
           />
         </div>
+        */}
       </HeroContent>
     </div>
   );

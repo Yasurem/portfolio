@@ -46,6 +46,8 @@ export function HeroArtifact() {
       camera={{ position: CAMERA_UNFOCUSED_POS.toArray(), fov: 45 }}
       style={{ width: '100%', height: '100%', pointerEvents: 'auto' }}
       onPointerMissed={() => setFocusedMesh(null)}
+      dpr={[1, 2]}
+      gl={{ antialias: true, powerPreference: "high-performance" }}
     >
       <ambientLight intensity={0.8} />
       <directionalLight position={[10, 20, 10]} intensity={1.5} />
@@ -280,7 +282,7 @@ function Model({ focusedMesh, setFocusedMesh }: { focusedMesh: THREE.Object3D | 
             geometry={piece.mesh.geometry}
             material={piece.material}
             position={piece.pos}
-            scale={piece.mesh.scale.clone()}
+            scale={piece.mesh.scale}
           >
             <Edges scale={1.02} threshold={15} color="#0b1021" />
           </mesh>
