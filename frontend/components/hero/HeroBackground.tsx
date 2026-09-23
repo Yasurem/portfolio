@@ -1,10 +1,14 @@
 'use client';
-import React, { useEffect, useRef, useState, forwardRef } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import HeroBackgroundAnimations from './HeroBackgroundAnimations';
+import MathEquations from './MathEquations';
 
-const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
+export interface HeroBackgroundRef {
+  getScrollTimeline: () => gsap.core.Timeline;
+}
+
+const HeroBackground = forwardRef<HeroBackgroundRef, {}>((props, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const waveRingRef = useRef<SVGCircleElement>(null);
@@ -14,38 +18,29 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
   
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const pathRefs = useRef<(SVGPathElement | null)[]>([]);
+  const dotPositionsRef = useRef<Record<number, {x: number, y: number}>>({});
 
-  const waveSpeed = 200; // Define wave speed here so it can be shared
+  const waveSpeed = 200;
 
   const updateMaskOnly = () => {
     if (!gridContainerRef.current) return;
     const { x, y } = mousePosRef.current;
     const { mouseOpacity, waveOpacity, time } = animStateRef.current;
     
-    // Base mask for the mouse cursor spotlight
     let finalMask = `radial-gradient(circle 350px at ${x}px ${y}px, rgba(0,0,0,${mouseOpacity}) 0%, rgba(0,0,0,0) 100%)`;
     
     const waveFront = waveSpeed * time;
     if (waveOpacity > 0 && waveFront > 0) {
-      // The waveMask illuminates everything from the center (0px) up to the expanding waveFront.
-      // This leaves a persistent "trail" of light revealing the entire path the wave went through.
       const waveMask = `radial-gradient(circle at 50% 50%, rgba(0,0,0,${waveOpacity}) ${Math.max(0, waveFront - 20)}px, rgba(0,0,0,0) ${waveFront + 20}px)`;
       finalMask = `${finalMask}, ${waveMask}`;
     }
 
-    // Center dot spotlight
     const centerMask = `radial-gradient(circle 350px at 50% 50%, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)`;
     finalMask = `${finalMask}, ${centerMask}`;
 
-    // Add exactly the same spotlight effect for the mathematical moving dots
-    const mathDots = document.querySelectorAll('.math-dot');
-    mathDots.forEach((dot) => {
-      const cx = dot.getAttribute('cx');
-      const cy = dot.getAttribute('cy');
-      if (cx && cy) {
-        const dotMask = `radial-gradient(circle 350px at ${cx}px ${cy}px, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)`;
-        finalMask = `${finalMask}, ${dotMask}`;
-      }
+    Object.values(dotPositionsRef.current).forEach((pos) => {
+      const dotMask = `radial-gradient(circle 350px at ${pos.x}px ${pos.y}px, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)`;
+      finalMask = `${finalMask}, ${dotMask}`;
     });
 
     gridContainerRef.current.style.maskImage = finalMask;
@@ -62,7 +57,6 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
         const rect = containerRef.current.getBoundingClientRect();
         mousePosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
         
-        // Manual update fallback if GSAP ticker isn't catching it for some reason
         if (!animStateRef.current.isActive) {
           updateMaskOnly(); 
         }
@@ -73,7 +67,6 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
     const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', handleResize);
     
-    // Bind mask updates to the GSAP ticker so the spotlight automatically tracks the moving equations at 60fps
     gsap.ticker.add(updateMaskOnly);
 
     return () => {
@@ -86,7 +79,6 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
   useGSAP(() => {
     if (dimensions.width === 0) return;
 
-    // Calm pulsing of the center red dot
     gsap.to('.hero-core-dot', {
       scale: 1.2, opacity: 0.8, duration: 3, repeat: -1, yoyo: true, ease: 'sine.inOut'
     });
@@ -98,7 +90,6 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
     const centerY = dimensions.height / 2;
     const gridSize = 40;
     
-    // Generate lines radiating perfectly from the center
     const horizontalLines: { y: number; isCenter: boolean; points: number[] }[] = [];
     const verticalLines: { x: number; isCenter: boolean; points: number[] }[] = [];
     
@@ -112,7 +103,6 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
     for (let x = centerX; x < dimensions.width + 40; x += gridSize) verticalLines.push({ x, isCenter: x === centerX, points: vPoints });
     for (let x = centerX - gridSize; x > -40; x -= gridSize) verticalLines.push({ x, isCenter: false, points: vPoints });
 
-    // Ensure we start with a clean state on re-render
     animStateRef.current = { time: 0, waveOpacity: 1, mouseOpacity: 0, isActive: true };
 
     const tl = gsap.timeline({
@@ -123,18 +113,14 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
         const timeDecay = Math.max(0, 1 - time / 3); 
         const waveFront = waveSpeed * time;
         
-        // 1. Update visual masks (wave light and cursor)
         updateMaskOnly();
         
-        // Update the visible glowing physical ring (fades out as wave hits edge)
         if (waveRingRef.current) {
           waveRingRef.current.setAttribute('r', waveFront.toString());
           const ringOpacity = Math.max(0, 1 - time / 3) * animStateRef.current.waveOpacity;
           waveRingRef.current.setAttribute('opacity', (ringOpacity * 2).toString());
         }
 
-        // 2. Warp the Grid lines computationally
-        // Only run the heavy math if the wave is still physically moving
         if (time < 3.0) {
           let pathIndex = 0;
           const getDisplacement = (x: number, y: number) => {
@@ -173,22 +159,52 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
       },
       onComplete: () => {
         animStateRef.current.isActive = false;
-        // Make absolutely sure the ring is hidden at the end
         if (waveRingRef.current) waveRingRef.current.setAttribute('opacity', '0');
         updateMaskOnly();
       }
     });
 
-    // Sequence 1: The physical wave expands (takes 3 seconds)
     tl.to(animStateRef.current, { time: 10, duration: 10, ease: 'power1.out' }, 0)
-      // Sequence 2: The wave light fades into darkness DURING the last 1.5 seconds of the wave
       .to(animStateRef.current, { waveOpacity: 0, duration: 1.5, ease: 'power2.inOut' }, 1.5)
-      // Sequence 3: Exactly when the wave finishes at 3 seconds, hand control to the mouse cursor spotlight
       .to(animStateRef.current, { mouseOpacity: 0.75, duration: 1, ease: 'power2.inOut' }, 3);
 
   }, [dimensions]); 
 
-  // Pre-calculate line styles based on screen dimensions for rendering
+  useImperativeHandle(ref, () => ({
+    getScrollTimeline: () => {
+      const tl = gsap.timeline();
+      
+      tl.to('.hero-core-svg', { 
+        x: () => {
+          const pc = document.getElementById('hero-portrait-container');
+          if (pc) {
+            const rect = pc.getBoundingClientRect();
+            return rect.left + (rect.width * 0.02) - (window.innerWidth / 2);
+          }
+          return window.innerWidth * 0.25;
+        }, 
+        y: () => {
+          const pc = document.getElementById('hero-portrait-container');
+          if (pc) {
+            const rect = pc.getBoundingClientRect();
+            return rect.top + rect.height / 2 - (window.innerHeight / 2);
+          }
+          return 0;
+        }, 
+        ease: 'power2.inOut', 
+        duration: 0.4 
+      }, 0);
+
+      tl.fromTo('.hero-core-svg', 
+        { opacity: 1 }, 
+        { opacity: 0, duration: 0.1 }, 
+        0.35
+      );
+      
+      return tl;
+    }
+  }));
+
   const linesToRender: { isCenter: boolean }[] = [];
   let centerX = 0;
   let centerY = 0;
@@ -203,11 +219,7 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
 
   return (
     <div 
-      ref={(node) => {
-        if (typeof ref === 'function') ref(node);
-        else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-        (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }} 
+      ref={containerRef} 
       className="absolute inset-0 w-full h-full flex items-center justify-center bg-transparent overflow-hidden"
     >
       <div ref={gridContainerRef} className="absolute inset-0 pointer-events-none">
@@ -218,17 +230,18 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
               ref={el => { pathRefs.current[i] = el; }}
               d="" 
               fill="none"
-              stroke="color-mix(in srgb, var(--color-charcoal) 90%, white)" 
+              stroke="color-mix(in srgb, var(--color-charcoal) 80%, white)" 
               strokeWidth={line.isCenter ? "1.5" : "1"}
               opacity={line.isCenter ? "1" : ".5"}
             />
           ))}
 
-          <HeroBackgroundAnimations 
+          <MathEquations 
             dimensions={dimensions}
             centerX={centerX}
             centerY={centerY}
             gridSize={40}
+            dotPositionsRef={dotPositionsRef}
           />
 
           <circle 
@@ -239,7 +252,7 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
         </svg>
       </div>
       <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none z-10">
-        <svg className="w-32 h-32 overflow-visible">
+        <svg className="w-32 h-32 overflow-visible hero-core-svg">
           <circle className="hero-core-glow" cx="50%" cy="50%" r="16" fill="var(--color-primary)" style={{ filter: 'blur(12px)' }} />
           <circle className="hero-core-dot" cx="50%" cy="50%" r="6" fill="var(--color-primary)" style={{ filter: 'blur(1.5px)' }} />
         </svg>

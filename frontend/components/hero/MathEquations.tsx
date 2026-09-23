@@ -4,11 +4,12 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
-interface HeroBackgroundAnimationsProps {
+interface MathEquationsProps {
   dimensions: { width: number; height: number };
   centerX: number;
   centerY: number;
   gridSize: number;
+  dotPositionsRef: React.MutableRefObject<Record<number, {x: number, y: number}>>;
 }
 
 type MathFunction = (x: number) => number;
@@ -104,6 +105,7 @@ interface ComplexMathEquationProps {
   offsetX: number;
   offsetY: number;
   onComplete: () => void;
+  dotPositionsRef: React.MutableRefObject<Record<number, {x: number, y: number}>>;
 }
 
 function ComplexMathEquation(props: ComplexMathEquationProps) {
@@ -172,7 +174,10 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
           opacity: 0,
           duration: 1,
           ease: 'power2.in',
-          onComplete: () => onComplete()
+          onComplete: () => {
+            delete propsRef.current.dotPositionsRef.current[id];
+            onComplete();
+          }
         });
       }
     });
@@ -180,10 +185,17 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
     const targetScreenX = p.centerX + ((minX + p.offsetX) * p.gridSize);
     const targetScreenY = p.centerY - ((initialMathY + p.offsetY) * p.gridSize);
 
-    tl.to(pointRef.current, {
-      attr: { cx: targetScreenX, cy: targetScreenY },
+    const pos = { x: startScreenX, y: startScreenY };
+    tl.to(pos, {
+      x: targetScreenX,
+      y: targetScreenY,
       duration: 0.8,
-      ease: 'power3.out'
+      ease: 'power3.out',
+      onUpdate: () => {
+        pointRef.current?.setAttribute('cx', pos.x.toString());
+        pointRef.current?.setAttribute('cy', pos.y.toString());
+        propsRef.current.dotPositionsRef.current[id] = { x: pos.x, y: pos.y };
+      }
     });
 
     tl.to(pathGroupRef.current, {
@@ -207,6 +219,8 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
         pointRef.current?.setAttribute('cx', screenX.toString());
         pointRef.current?.setAttribute('cy', screenY.toString());
 
+        currP.dotPositionsRef.current[id] = { x: screenX, y: screenY };
+
         if (equation.showTangent && tangentRef.current) {
           const m = equation.derivative(currentX);
           const currentDx = 1.5 / Math.sqrt(1 + m * m);
@@ -225,6 +239,9 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
       }
     });
 
+    return () => {
+      delete propsRef.current.dotPositionsRef.current[id];
+    };
   }, { scope: groupRef, dependencies: [equation] });
 
   return (
@@ -238,7 +255,7 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
   );
 }
 
-export default function HeroBackgroundAnimations({ dimensions, centerX, centerY, gridSize }: HeroBackgroundAnimationsProps) {
+export default function MathEquations({ dimensions, centerX, centerY, gridSize, dotPositionsRef }: MathEquationsProps) {
   const [activeEquations, setActiveEquations] = useState<ActiveEquation[]>([]);
   const idCounter = useRef(0);
 
@@ -311,7 +328,7 @@ export default function HeroBackgroundAnimations({ dimensions, centerX, centerY,
   if (dimensions.width === 0) return null;
 
   return (
-    <g>
+    <g className="math-equations-wrapper">
       {activeEquations.map((eq) => (
         <ComplexMathEquation
           key={eq.id}
@@ -323,6 +340,7 @@ export default function HeroBackgroundAnimations({ dimensions, centerX, centerY,
           offsetX={eq.offsetX}
           offsetY={eq.offsetY}
           onComplete={() => handleComplete(eq.id)}
+          dotPositionsRef={dotPositionsRef}
         />
       ))}
     </g>

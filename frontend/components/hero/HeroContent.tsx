@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, forwardRef } from 'react';
+import React, { useRef, forwardRef, useImperativeHandle } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
@@ -8,8 +8,12 @@ interface HeroContentProps {
   children?: React.ReactNode;
 }
 
-const HeroContent = forwardRef<HTMLDivElement, HeroContentProps>((props, ref) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
+export interface HeroContentRef {
+  getScrollTimeline: () => gsap.core.Timeline;
+}
+
+const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) => {
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
     gsap.to('.hero-content-item', {
@@ -22,17 +26,30 @@ const HeroContent = forwardRef<HTMLDivElement, HeroContentProps>((props, ref) =>
     });
   }, { scope: containerRef });
 
-  const setRefs = (node: HTMLDivElement | null) => {
-    containerRef.current = node;
-    if (typeof ref === 'function') {
-      ref(node);
-    } else if (ref) {
-      ref.current = node;
+  useImperativeHandle(ref, () => ({
+    getScrollTimeline: () => {
+      const tl = gsap.timeline();
+      
+      tl.to('.hero-entity', {
+        x: '-42vw',
+        xPercent: 50,
+        ease: 'power1.inOut',
+        stagger: 0.05,
+        duration: 0.2
+      }, 0);
+
+      tl.to('.portrait-img', { 
+        opacity: 1, 
+        duration: 0.3, 
+        ease: 'power1.inOut' 
+      }, 1.3);
+
+      return tl;
     }
-  };
+  }));
 
   return (
-    <div ref={setRefs} className="relative z-10 flex flex-col items-center justify-center px-4 md:px-8 pointer-events-none w-full h-full overflow-hidden">
+    <div ref={containerRef} className="relative z-10 flex flex-col items-center justify-center px-4 md:px-8 pointer-events-none w-full h-full overflow-hidden">
       
       {/* Main Heading Entity */}
       <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max">
