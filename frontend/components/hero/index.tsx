@@ -4,8 +4,8 @@ import React, { useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
-import Image from 'next/image';
-import portrait from '@/components/hero/img/Portrait.svg';
+// import Image from 'next/image';
+// import portrait from '@/components/hero/img/Portrait.svg';
 
 import HeroBackground, { HeroBackgroundRef } from './HeroBackground';
 import HeroContent, { HeroContentRef } from './HeroContent';

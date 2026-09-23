@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/purity */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useRef, useMemo, useState } from 'react';
@@ -76,6 +78,7 @@ function Model({ focusedMesh, setFocusedMesh }: { focusedMesh: THREE.Object3D | 
 
   // Construct the 3x3x3 Rubik's Cube with ORIGINAL geometry and scatter debris
   const { rubiksPieces, debrisPieces } = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity
     const shuffled = [...meshes].sort(() => 0.5 - Math.random());
     
     // 1. 27 original pieces for the Rubik's Cube

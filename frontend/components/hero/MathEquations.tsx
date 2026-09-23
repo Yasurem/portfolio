@@ -285,7 +285,7 @@ export default function MathEquations({ dimensions, centerX, centerY, gridSize, 
 
         // 3. Exact Screen Placement (Hemisphere Centering)
         let offsetX = 0;
-        let offsetY = (Math.random() - 0.5) * 6; // Keep Y closer to the vertical center
+        const offsetY = (Math.random() - 0.5) * 6; // Keep Y closer to the vertical center
 
         if (side === 'right') {
           // Right Hemisphere: spawn between +8 and +12 units (approx 320px to 480px right of center)

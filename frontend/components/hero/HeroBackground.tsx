@@ -8,7 +8,7 @@ export interface HeroBackgroundRef {
   getScrollTimeline: () => gsap.core.Timeline;
 }
 
-const HeroBackground = forwardRef<HeroBackgroundRef, {}>((props, ref) => {
+const HeroBackground = forwardRef<HeroBackgroundRef, unknown>((props, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const waveRingRef = useRef<SVGCircleElement>(null);
