@@ -16,6 +16,16 @@ export interface HeroContentRef {
 
 const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    // Defer heavy WebGL compilation until after the initial page paint
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => setIsMounted(true));
+    } else {
+      setTimeout(() => setIsMounted(true), 100);
+    }
+  }, []);
 
   useGSAP(() => {
     // Empty scope as animations moved to getIntroTimeline
@@ -142,7 +152,7 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
           id="hero-portrait-container" 
           className="hero-portrait-container w-full h-full flex justify-center items-center relative opacity-80 will-change-transform"
         >
-           <HeroArtifact />
+           {isMounted && <HeroArtifact />}
            {props.children}
         </div>
       </div>
