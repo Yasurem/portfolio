@@ -150,7 +150,7 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
       <div className="absolute right-0 top-0 flex justify-center items-center pointer-events-auto z-0 w-[50vw] h-[100vh] overflow-hidden">
         <div 
           id="hero-portrait-container" 
-          className="hero-portrait-container w-full h-full flex justify-center items-center relative opacity-80 will-change-transform"
+          className="hero-portrait-container w-full h-full flex justify-center items-center relative will-change-transform"
         >
            {isMounted && <HeroArtifact />}
            {props.children}
