@@ -4,11 +4,11 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import MathEquations from './MathEquations';
 
-export interface HeroBackgroundRef {
-  getScrollTimeline: () => gsap.core.Timeline;
+export interface HeroAnimatedGridRef {
+  getScrollTimeline: (isDesktop?: boolean) => gsap.core.Timeline;
 }
 
-const HeroBackground = forwardRef<HeroBackgroundRef, unknown>((props, ref) => {
+const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const waveRingRef = useRef<SVGCircleElement>(null);
@@ -79,6 +79,9 @@ const HeroBackground = forwardRef<HeroBackgroundRef, unknown>((props, ref) => {
   useGSAP(() => {
     if (dimensions.width === 0) return;
 
+    const mm = gsap.matchMedia();
+
+    // Common animations
     gsap.to('.hero-core-dot', {
       scale: 1.2, opacity: 0.8, duration: 3, repeat: -1, yoyo: true, ease: 'sine.inOut'
     });
@@ -86,110 +89,148 @@ const HeroBackground = forwardRef<HeroBackgroundRef, unknown>((props, ref) => {
       scale: 1.4, opacity: 0.2, duration: 3, repeat: -1, yoyo: true, ease: 'sine.inOut'
     });
 
-    const centerX = dimensions.width / 2;
-    const centerY = dimensions.height / 2;
-    const gridSize = 40;
-    
-    const horizontalLines: { y: number; isCenter: boolean; points: number[] }[] = [];
-    const verticalLines: { x: number; isCenter: boolean; points: number[] }[] = [];
-    
-    const hPoints = [];
-    for (let x = -40; x <= dimensions.width + 40; x += 20) hPoints.push(x);
-    for (let y = centerY; y < dimensions.height + 40; y += gridSize) horizontalLines.push({ y, isCenter: y === centerY, points: hPoints });
-    for (let y = centerY - gridSize; y > -40; y -= gridSize) horizontalLines.push({ y, isCenter: false, points: hPoints });
+    mm.add("(min-width: 768px)", () => {
+      // Desktop: Heavy wave animation
+      const centerX = dimensions.width / 2;
+      const centerY = dimensions.height / 2;
+      const gridSize = 40;
+      
+      const horizontalLines: { y: number; isCenter: boolean; points: number[] }[] = [];
+      const verticalLines: { x: number; isCenter: boolean; points: number[] }[] = [];
+      
+      const hPoints = [];
+      for (let x = -40; x <= dimensions.width + 40; x += 20) hPoints.push(x);
+      for (let y = centerY; y < dimensions.height + 40; y += gridSize) horizontalLines.push({ y, isCenter: y === centerY, points: hPoints });
+      for (let y = centerY - gridSize; y > -40; y -= gridSize) horizontalLines.push({ y, isCenter: false, points: hPoints });
 
-    const vPoints = [];
-    for (let y = -40; y <= dimensions.height + 40; y += 20) vPoints.push(y);
-    for (let x = centerX; x < dimensions.width + 40; x += gridSize) verticalLines.push({ x, isCenter: x === centerX, points: vPoints });
-    for (let x = centerX - gridSize; x > -40; x -= gridSize) verticalLines.push({ x, isCenter: false, points: vPoints });
+      const vPoints = [];
+      for (let y = -40; y <= dimensions.height + 40; y += 20) vPoints.push(y);
+      for (let x = centerX; x < dimensions.width + 40; x += gridSize) verticalLines.push({ x, isCenter: x === centerX, points: vPoints });
+      for (let x = centerX - gridSize; x > -40; x -= gridSize) verticalLines.push({ x, isCenter: false, points: vPoints });
 
-    animStateRef.current = { time: 0, waveOpacity: 1, mouseOpacity: 0, isActive: true };
+      animStateRef.current = { time: 0, waveOpacity: 1, mouseOpacity: 0, isActive: true };
 
-    const tl = gsap.timeline({
-      onUpdate: () => {
-        const { time } = animStateRef.current;
-        const waveLength = 80;
-        const decay = 0.003; 
-        const timeDecay = Math.max(0, 1 - time / 3); 
-        const waveFront = waveSpeed * time;
-        
-        updateMaskOnly();
-        
-        if (waveRingRef.current) {
-          waveRingRef.current.setAttribute('r', waveFront.toString());
-          const ringOpacity = Math.max(0, 1 - time / 3) * animStateRef.current.waveOpacity;
-          waveRingRef.current.setAttribute('opacity', (ringOpacity * 2).toString());
+      const tl = gsap.timeline({
+        onUpdate: () => {
+          const { time } = animStateRef.current;
+          const waveLength = 80;
+          const decay = 0.003; 
+          const timeDecay = Math.max(0, 1 - time / 3); 
+          const waveFront = waveSpeed * time;
+          
+          updateMaskOnly();
+          
+          if (waveRingRef.current) {
+            waveRingRef.current.setAttribute('r', waveFront.toString());
+            const ringOpacity = Math.max(0, 1 - time / 3) * animStateRef.current.waveOpacity;
+            waveRingRef.current.setAttribute('opacity', (ringOpacity * 2).toString());
+          }
+
+          if (time < 3.0) {
+            let pathIndex = 0;
+            const getDisplacement = (x: number, y: number) => {
+              const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+              if (distance > waveFront) return 0;
+              
+              const amplitude = 40 * timeDecay * Math.exp(-distance * decay);
+              const phase = (distance - waveFront) / waveLength;
+              if (phase < -3) return 0; 
+              
+              return Math.sin(phase * Math.PI * 2) * amplitude;
+            };
+
+            horizontalLines.forEach((line) => {
+              if (!pathRefs.current[pathIndex]) return;
+              let d = `M -40 ${line.y + getDisplacement(-40, line.y)}`;
+              for (let i = 1; i < line.points.length; i++) {
+                const px = line.points[i];
+                d += ` L ${px} ${line.y + getDisplacement(px, line.y)}`;
+              }
+              pathRefs.current[pathIndex]?.setAttribute('d', d);
+              pathIndex++;
+            });
+
+            verticalLines.forEach((line) => {
+              if (!pathRefs.current[pathIndex]) return;
+              let d = `M ${line.x + getDisplacement(line.x, -40)} -40`;
+              for (let i = 1; i < line.points.length; i++) {
+                const py = line.points[i];
+                d += ` L ${line.x + getDisplacement(line.x, py)} ${py}`;
+              }
+              pathRefs.current[pathIndex]?.setAttribute('d', d);
+              pathIndex++;
+            });
+          }
+        },
+        onComplete: () => {
+          animStateRef.current.isActive = false;
+          if (waveRingRef.current) waveRingRef.current.setAttribute('opacity', '0');
+          updateMaskOnly();
         }
+      });
 
-        if (time < 3.0) {
-          let pathIndex = 0;
-          const getDisplacement = (x: number, y: number) => {
-            const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-            if (distance > waveFront) return 0;
-            
-            const amplitude = 40 * timeDecay * Math.exp(-distance * decay);
-            const phase = (distance - waveFront) / waveLength;
-            if (phase < -3) return 0; 
-            
-            return Math.sin(phase * Math.PI * 2) * amplitude;
-          };
+      tl.to(animStateRef.current, { time: 10, duration: 10, ease: 'power1.out' }, 0)
+        .to(animStateRef.current, { waveOpacity: 0, duration: 1.5, ease: 'power2.inOut' }, 1.5)
+        .to(animStateRef.current, { mouseOpacity: 0.75, duration: 1, ease: 'power2.inOut' }, 3);
+    });
 
-          horizontalLines.forEach((line) => {
-            if (!pathRefs.current[pathIndex]) return;
-            let d = `M -40 ${line.y + getDisplacement(-40, line.y)}`;
-            for (let i = 1; i < line.points.length; i++) {
-              const px = line.points[i];
-              d += ` L ${px} ${line.y + getDisplacement(px, line.y)}`;
-            }
-            pathRefs.current[pathIndex]?.setAttribute('d', d);
-            pathIndex++;
-          });
-
-          verticalLines.forEach((line) => {
-            if (!pathRefs.current[pathIndex]) return;
-            let d = `M ${line.x + getDisplacement(line.x, -40)} -40`;
-            for (let i = 1; i < line.points.length; i++) {
-              const py = line.points[i];
-              d += ` L ${line.x + getDisplacement(line.x, py)} ${py}`;
-            }
-            pathRefs.current[pathIndex]?.setAttribute('d', d);
-            pathIndex++;
-          });
-        }
-      },
-      onComplete: () => {
-        animStateRef.current.isActive = false;
-        if (waveRingRef.current) waveRingRef.current.setAttribute('opacity', '0');
-        updateMaskOnly();
+    mm.add("(max-width: 767px)", () => {
+      // Mobile: Disable complex path displacement and heavy masking
+      animStateRef.current.isActive = false;
+      if (gridContainerRef.current) {
+        gridContainerRef.current.style.maskImage = 'none';
+        gridContainerRef.current.style.webkitMaskImage = 'none';
+      }
+      if (waveRingRef.current) waveRingRef.current.setAttribute('opacity', '0');
+      
+      // Keep background lines static on mobile
+      let pathIndex = 0;
+      const centerX = dimensions.width / 2;
+      const centerY = dimensions.height / 2;
+      
+      for (let y = centerY; y < dimensions.height + 40; y += 40) {
+        if (pathRefs.current[pathIndex]) pathRefs.current[pathIndex]?.setAttribute('d', `M -40 ${y} L ${dimensions.width + 40} ${y}`);
+        pathIndex++;
+      }
+      for (let y = centerY - 40; y > -40; y -= 40) {
+        if (pathRefs.current[pathIndex]) pathRefs.current[pathIndex]?.setAttribute('d', `M -40 ${y} L ${dimensions.width + 40} ${y}`);
+        pathIndex++;
+      }
+      for (let x = centerX; x < dimensions.width + 40; x += 40) {
+        if (pathRefs.current[pathIndex]) pathRefs.current[pathIndex]?.setAttribute('d', `M ${x} -40 L ${x} ${dimensions.height + 40}`);
+        pathIndex++;
+      }
+      for (let x = centerX - 40; x > -40; x -= 40) {
+        if (pathRefs.current[pathIndex]) pathRefs.current[pathIndex]?.setAttribute('d', `M ${x} -40 L ${x} ${dimensions.height + 40}`);
+        pathIndex++;
       }
     });
 
-    tl.to(animStateRef.current, { time: 10, duration: 10, ease: 'power1.out' }, 0)
-      .to(animStateRef.current, { waveOpacity: 0, duration: 1.5, ease: 'power2.inOut' }, 1.5)
-      .to(animStateRef.current, { mouseOpacity: 0.75, duration: 1, ease: 'power2.inOut' }, 3);
-
+    return () => mm.revert();
   }, [dimensions]); 
 
   useImperativeHandle(ref, () => ({
-    getScrollTimeline: () => {
+    getScrollTimeline: (isDesktop = true) => {
       const tl = gsap.timeline();
       
+      if (!isDesktop) return tl;
+
       tl.to('.hero-core-svg', { 
         x: () => {
           const pc = document.getElementById('hero-portrait-container');
-          if (pc) {
+          if (pc && window.innerWidth >= 768) {
             const rect = pc.getBoundingClientRect();
             return rect.left + (rect.width * 0.02) - (window.innerWidth / 2);
           }
-          return window.innerWidth * 0.25;
+          return 0; // Stay horizontally centered on mobile
         }, 
         y: () => {
           const pc = document.getElementById('hero-portrait-container');
-          if (pc) {
+          if (pc && window.innerWidth >= 768) {
             const rect = pc.getBoundingClientRect();
             return rect.top + rect.height / 2 - (window.innerHeight / 2);
           }
-          return 0;
+          return 0; // Stay vertically centered on mobile
         }, 
         ease: 'power2.inOut', 
         duration: 0.4 
@@ -264,6 +305,6 @@ const HeroBackground = forwardRef<HeroBackgroundRef, unknown>((props, ref) => {
   );
 });
 
-HeroBackground.displayName = 'HeroBackground';
+HeroAnimatedGrid.displayName = 'HeroAnimatedGrid';
 
-export default HeroBackground;
+export default HeroAnimatedGrid;

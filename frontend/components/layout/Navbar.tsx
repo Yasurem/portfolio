@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 const navLinks = [
   { name: "HOME", href: "/" },
@@ -16,15 +17,25 @@ export default function Navbar() {
   const navRef = useRef<HTMLElement>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    if (navRef.current) {
+  useGSAP(() => {
+    if (!navRef.current) return;
+    const mm = gsap.matchMedia();
+
+    mm.add("(min-width: 768px)", () => {
       gsap.fromTo(
         navRef.current,
         { y: -100, opacity: 0 },
         { y: 0, opacity: 1, duration: 1.5, ease: "expo.out", delay: 2.3 }
       );
-    }
-  }, []);
+    });
+
+    mm.add("(max-width: 767px)", () => {
+      // Ensure Navbar is visible immediately on mobile without animation overhead
+      gsap.set(navRef.current, { y: 0, opacity: 1 });
+    });
+
+    return () => mm.revert();
+  }, { scope: navRef });
 
   const toggleMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);

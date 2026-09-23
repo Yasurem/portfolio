@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useRef, useMemo, useState } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, Environment, Edges, PerformanceMonitor } from '@react-three/drei';
 import * as THREE from 'three';
@@ -13,7 +13,7 @@ import * as THREE from 'three';
 
 // --- 1. THE HERO (Rubik's Cube) ---
 const HERO_SCALE: [number, number, number] = [5, 5, 5];
-const HERO_MESH_POSITION: [number, number, number] = [0, .76, 0]; 
+const HERO_MESH_POSITION: [number, number, number] = [0, 0.76, 0]; 
 const RUBIKS_CUBE_SPACING = .76; 
 
 // --- 2. CAMERA: UNFOCUSED (Idle State) ---
@@ -36,14 +36,37 @@ const _meshWorldPos = new THREE.Vector3();
 const _rotQuat = new THREE.Quaternion();
 const _tempPos = new THREE.Vector3();
 const _tempQuat = new THREE.Quaternion();
+const _axes = [
+  new THREE.Vector3(1, 0, 0),
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(0, 0, 1)
+];
 
 // Rubik's Colors Palette (Extracted from Brain Illustration)
 const PALETTE = ['#FF3B7C', '#FF7A00', '#88E716', '#00C3FF', '#7E8FAD', '#171B33'];
 
-export function HeroArtifact() {
+const DESKTOP_DPR: [number, number] = [1, 2];
+const MOBILE_DPR: [number, number] = [1, 1.5];
+
+export function Hero3DRubiks() {
   const [focusedMesh, setFocusedMesh] = useState<THREE.Object3D | null>(null);
-  const [dpr, setDpr] = useState<number | [number, number]>([1, 2]);
+  const [dpr, setDpr] = useState<number | [number, number]>(DESKTOP_DPR);
   const [isLowPerf, setIsLowPerf] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      setDpr(prev => {
+        const next = mobile ? MOBILE_DPR : DESKTOP_DPR;
+        return prev === next ? prev : next;
+      });
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <Canvas
@@ -53,21 +76,17 @@ export function HeroArtifact() {
       dpr={dpr}
       gl={{ antialias: true, powerPreference: "high-performance" }}
     >
-      <PerformanceMonitor onDecline={() => {
-        setDpr(1);
-        setIsLowPerf(true);
-      }} />
       <ambientLight intensity={0.8} />
       <directionalLight position={[10, 20, 10]} intensity={1.5} />
-      <Environment preset="city" />
+      {(!isLowPerf && !isMobile) && <Environment preset="city" />}
       <React.Suspense fallback={null}>
-        <Model focusedMesh={focusedMesh} setFocusedMesh={setFocusedMesh} isLowPerf={isLowPerf} />
+        <Model focusedMesh={focusedMesh} setFocusedMesh={setFocusedMesh} isLowPerf={isLowPerf} isMobile={isMobile} />
       </React.Suspense>
     </Canvas>
   );
 }
 
-function Model({ focusedMesh, setFocusedMesh, isLowPerf }: { focusedMesh: THREE.Object3D | null, setFocusedMesh: any, isLowPerf: boolean }) {
+function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMesh: THREE.Object3D | null, setFocusedMesh: any, isLowPerf: boolean, isMobile: boolean }) {
   const { nodes } = useGLTF('/models/isometric_cubes.gltf');
   const { camera } = useThree();
   const lookTarget = useRef(new THREE.Vector3().copy(CAMERA_UNFOCUSED_LOOK));
@@ -167,13 +186,8 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf }: { focusedMesh: THREE.
     const anim = animState.current;
     if (!anim.isAnimating) {
       if (clock.elapsedTime - anim.lastAnimTime > 2.0 + Math.random()) {
-        const axes = [
-          new THREE.Vector3(1, 0, 0),
-          new THREE.Vector3(0, 1, 0),
-          new THREE.Vector3(0, 0, 1)
-        ];
         const axisIdx = Math.floor(Math.random() * 3);
-        const axis = axes[axisIdx];
+        const axis = _axes[axisIdx];
         const logicalAxis = ['x', 'y', 'z'][axisIdx] as 'x' | 'y' | 'z';
         
         const sliceIndex = Math.floor(Math.random() * 3) - 1; 
@@ -239,6 +253,13 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf }: { focusedMesh: THREE.
           mesh.position.x = Math.round(mesh.position.x / RUBIKS_CUBE_SPACING) * RUBIKS_CUBE_SPACING;
           mesh.position.y = Math.round(mesh.position.y / RUBIKS_CUBE_SPACING) * RUBIKS_CUBE_SPACING;
           mesh.position.z = Math.round(mesh.position.z / RUBIKS_CUBE_SPACING) * RUBIKS_CUBE_SPACING;
+          
+          const PI_2 = Math.PI / 2;
+          const euler = new THREE.Euler().setFromQuaternion(mesh.quaternion);
+          euler.x = Math.round(euler.x / PI_2) * PI_2;
+          euler.y = Math.round(euler.y / PI_2) * PI_2;
+          euler.z = Math.round(euler.z / PI_2) * PI_2;
+          mesh.quaternion.setFromEuler(euler);
         }
       }
     }
@@ -299,7 +320,7 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf }: { focusedMesh: THREE.
       </group>
 
       {/* 2. Background Debris Field */}
-      {!isLowPerf && (
+      {(!isLowPerf && !isMobile) && (
         <group ref={debrisGroupRef}>
           {debrisPieces.map((piece, i) => (
             <mesh

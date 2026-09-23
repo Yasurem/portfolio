@@ -261,6 +261,7 @@ export default function MathEquations({ dimensions, centerX, centerY, gridSize, 
 
   useEffect(() => {
     if (dimensions.width === 0 || dimensions.height === 0) return;
+    if (dimensions.width < 768) return; // Disable computationally heavy math equations on mobile
 
     let interval: NodeJS.Timeout;
     let timeout: NodeJS.Timeout;
