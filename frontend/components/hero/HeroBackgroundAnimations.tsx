@@ -28,7 +28,7 @@ const equations: MathEquationDef[] = [
     func: (x) => (x * x) / 10,
     derivative: (x) => x / 5,
     range: [-8, 8],
-    color: '#FF4136',
+    color: 'var(--color-primary)',
     showTangent: true
   },
   {
@@ -39,7 +39,7 @@ const equations: MathEquationDef[] = [
       return f * (1 - f);
     },
     range: [-6, 6],
-    color: '#0074D9',
+    color: 'var(--color-sand-peach)',
     showTangent: true
   },
   {
@@ -47,7 +47,7 @@ const equations: MathEquationDef[] = [
     func: (x) => Math.tanh(x),
     derivative: (x) => 1 - Math.pow(Math.tanh(x), 2),
     range: [-6, 6],
-    color: '#FF851B',
+    color: 'var(--color-lofi)',
     showTangent: true
   },
   {
@@ -55,7 +55,7 @@ const equations: MathEquationDef[] = [
     func: (x) => Math.max(0, x),
     derivative: (x) => x > 0 ? 1 : 0,
     range: [-6, 6],
-    color: '#2ECC40',
+    color: 'var(--color-primary)',
     showTangent: false // Disabled for straight lines
   },
   {
@@ -66,7 +66,7 @@ const equations: MathEquationDef[] = [
       return (1 + exp_nx + x * exp_nx) / Math.pow(1 + exp_nx, 2);
     },
     range: [-6, 6],
-    color: '#B10DC9',
+    color: 'var(--color-sand-peach)',
     showTangent: true
   },
   {
@@ -74,7 +74,7 @@ const equations: MathEquationDef[] = [
     func: (x) => 5 * Math.exp(-(x * x) / 8),
     derivative: (x) => 5 * Math.exp(-(x * x) / 8) * (-x / 4),
     range: [-8, 8],
-    color: '#FFDC00',
+    color: 'var(--color-lofi)',
     showTangent: false // Disabled as requested
   },
   {
@@ -82,7 +82,7 @@ const equations: MathEquationDef[] = [
     func: (x) => Math.sin(x) * Math.exp(-0.15 * x),
     derivative: (x) => Math.exp(-0.15 * x) * (Math.cos(x) - 0.15 * Math.sin(x)),
     range: [-2, 12],
-    color: '#39CCCC',
+    color: 'var(--color-primary)',
     showTangent: true
   }
 ];
@@ -233,7 +233,7 @@ function ComplexMathEquation(props: ComplexMathEquationProps) {
         <path className="math-path" d={d} fill="none" stroke={equation.color} strokeWidth="1.5" opacity={0.3} />
         {equation.showTangent && <line className="math-path" ref={tangentRef} stroke={equation.color} strokeWidth="2" opacity={0.8} />}
       </g>
-      <circle ref={pointRef} className="math-dot" r="4" fill="#ff3333" />
+      <circle ref={pointRef} className="math-dot" r="4" fill="var(--color-primary)" />
     </g>
   );
 }

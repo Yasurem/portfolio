@@ -118,7 +118,7 @@ export default function HeroNetwork() {
   }, { scope: containerRef });
 
   return (
-    <div ref={containerRef} className="relative w-full h-screen bg-black overflow-hidden flex items-center justify-center">
+    <div ref={containerRef} className="relative w-full h-screen bg-background overflow-hidden flex items-center justify-center">
       <HeroBackground ref={svgRef} />
       
       <HeroContent ref={textRef}>
@@ -131,7 +131,7 @@ export default function HeroNetwork() {
           <path 
             className="frame-circle-top"
             d="M 2 50 a 48 48 0 1 1 96 0 a 48 48 0 1 1 -96 0"
-            fill="none" stroke="#ff3333" strokeWidth="0.8" 
+            fill="none" stroke="var(--color-primary)" strokeWidth="0.8" 
             pathLength="100"
             strokeDasharray="100" strokeDashoffset="100"
             strokeLinecap="round"
@@ -140,7 +140,7 @@ export default function HeroNetwork() {
           <path 
             className="frame-circle-bottom"
             d="M 2 50 a 48 48 0 1 1 96 0 a 48 48 0 1 1 -96 0"
-            fill="none" stroke="#ff3333" strokeWidth="0.8" 
+            fill="none" stroke="var(--color-primary)" strokeWidth="0.8" 
             pathLength="100"
             strokeDasharray="100" strokeDashoffset="-100"
             strokeLinecap="round"
@@ -152,13 +152,13 @@ export default function HeroNetwork() {
           */}
           <g className="split-orb-top">
              <rect width="100" height="100" fill="transparent" />
-             <circle cx="2" cy="50" r="1.5" fill="#ff3333" />
-             <circle cx="2" cy="50" r="3" fill="#ff3333" opacity="0.3" style={{ filter: 'blur(1px)' }} />
+             <circle cx="2" cy="50" r="1.5" fill="var(--color-primary)" />
+             <circle cx="2" cy="50" r="3" fill="var(--color-primary)" opacity="0.3" style={{ filter: 'blur(1px)' }} />
           </g>
           <g className="split-orb-bottom">
              <rect width="100" height="100" fill="transparent" />
-             <circle cx="2" cy="50" r="1.5" fill="#ff3333" />
-             <circle cx="2" cy="50" r="3" fill="#ff3333" opacity="0.3" style={{ filter: 'blur(1px)' }} />
+             <circle cx="2" cy="50" r="1.5" fill="var(--color-primary)" />
+             <circle cx="2" cy="50" r="3" fill="var(--color-primary)" opacity="0.3" style={{ filter: 'blur(1px)' }} />
           </g>
         </svg>
         <Image 

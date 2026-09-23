@@ -36,28 +36,28 @@ const HeroContent = forwardRef<HTMLDivElement, HeroContentProps>((props, ref) =>
       
       {/* Main Heading Entity */}
       <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max">
-        <h1 className="text-6xl md:text-8xl font-extrabold text-white mb-6 tracking-tighter">
-          Joemarc <span className="text-[#FF0000]">Castillo</span>
+        <h1 className="text-6xl md:text-8xl font-extrabold text-foreground mb-6 tracking-tighter font-heading">
+          Joemarc <span className="text-primary drop-shadow-[0_0_15px_color-mix(in_srgb,var(--color-primary)_50%,transparent)]">Castillo</span>
         </h1>
       </div>
 
       {/* Description Entity */}
-      <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max text-lg md:text-xl text-gray-400 font-light tracking-wide">
+      <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max text-lg md:text-xl text-lofi font-light tracking-wide">
         Initializing advanced vector sequences.
       </div>
-      <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max text-lg md:text-xl text-gray-400 font-light tracking-wide">
+      <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max text-lg md:text-xl text-lofi font-light tracking-wide">
         Building digital experiences with precision,
       </div>
-      <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max text-lg md:text-xl text-gray-400 font-light tracking-wide mb-10">
+      <div className="hero-entity hero-content-item text-center opacity-0 translate-y-10 w-max text-lg md:text-xl text-lofi font-light tracking-wide mb-10">
         performance, and aesthetic clarity.
       </div>
 
       {/* Buttons Entity */}
       <div className="hero-entity hero-content-item flex gap-6 pointer-events-auto opacity-0 translate-y-10 w-max">
-        <button className="px-8 py-4 bg-[#800000] text-white rounded-sm font-semibold tracking-widest uppercase text-sm hover:bg-[#FF0000] transition-colors duration-300">
+        <button className="px-8 py-4 bg-primary text-foreground rounded-sm font-semibold tracking-widest uppercase text-sm hover:bg-primary/80 transition-colors duration-300 shadow-[0_0_10px_color-mix(in_srgb,var(--color-primary)_30%,transparent)]">
           Initialize Sequence
         </button>
-        <button className="px-8 py-4 border border-[#800000] text-[#FF0000] rounded-sm font-semibold tracking-widest uppercase text-sm hover:bg-[#800000]/10 transition-colors duration-300">
+        <button className="px-8 py-4 border border-primary text-primary rounded-sm font-semibold tracking-widest uppercase text-sm hover:bg-primary/10 transition-colors duration-300 shadow-[0_0_10px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]">
           View Logs
         </button>
       </div>

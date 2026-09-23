@@ -33,6 +33,10 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
       finalMask = `${finalMask}, ${waveMask}`;
     }
 
+    // Center dot spotlight
+    const centerMask = `radial-gradient(circle 350px at 50% 50%, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)`;
+    finalMask = `${finalMask}, ${centerMask}`;
+
     // Add exactly the same spotlight effect for the mathematical moving dots
     const mathDots = document.querySelectorAll('.math-dot');
     mathDots.forEach((dot) => {
@@ -126,7 +130,7 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
         if (waveRingRef.current) {
           waveRingRef.current.setAttribute('r', waveFront.toString());
           const ringOpacity = Math.max(0, 1 - time / 3) * animStateRef.current.waveOpacity;
-          waveRingRef.current.setAttribute('opacity', (ringOpacity * 0.7).toString());
+          waveRingRef.current.setAttribute('opacity', (ringOpacity * 2).toString());
         }
 
         // 2. Warp the Grid lines computationally
@@ -204,7 +208,7 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
         else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
         (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
       }} 
-      className="absolute inset-0 w-full h-full flex items-center justify-center bg-black overflow-hidden"
+      className="absolute inset-0 w-full h-full flex items-center justify-center bg-transparent overflow-hidden"
     >
       <div ref={gridContainerRef} className="absolute inset-0 pointer-events-none">
         <svg className="w-full h-full">
@@ -214,9 +218,9 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
               ref={el => { pathRefs.current[i] = el; }}
               d="" 
               fill="none"
-              stroke="#A0D8EF" 
-              strokeWidth={line.isCenter ? "1.5" : "0.8"}
-              opacity={line.isCenter ? "0.8" : "0.5"}
+              stroke="color-mix(in srgb, var(--color-charcoal) 90%, white)" 
+              strokeWidth={line.isCenter ? "1.5" : "1"}
+              opacity={line.isCenter ? "1" : ".5"}
             />
           ))}
 
@@ -229,15 +233,15 @@ const HeroBackground = forwardRef<HTMLDivElement>((props, ref) => {
 
           <circle 
             ref={waveRingRef} 
-            cx="50%" cy="50%" r="0" fill="none" stroke="#A0D8EF" strokeWidth="3" 
-            opacity="0" style={{ filter: 'blur(3px)' }} 
+            cx="50%" cy="50%" r="0" fill="none" stroke="var(--color-primary)" strokeWidth="10" 
+            opacity="0" style={{ filter: 'blur(4px)' }} 
           />
         </svg>
       </div>
       <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none z-10">
         <svg className="w-32 h-32 overflow-visible">
-          <circle className="hero-core-glow" cx="50%" cy="50%" r="16" fill="#ff0000" style={{ filter: 'blur(12px)' }} />
-          <circle className="hero-core-dot" cx="50%" cy="50%" r="6" fill="#ff3333" style={{ filter: 'blur(1.5px)' }} />
+          <circle className="hero-core-glow" cx="50%" cy="50%" r="16" fill="var(--color-primary)" style={{ filter: 'blur(12px)' }} />
+          <circle className="hero-core-dot" cx="50%" cy="50%" r="6" fill="var(--color-primary)" style={{ filter: 'blur(1.5px)' }} />
         </svg>
       </div>
     </div>
