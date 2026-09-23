@@ -3,6 +3,7 @@
 import React, { useRef, forwardRef, useImperativeHandle } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import { HeroArtifact } from './HeroArtifact';
 
 interface HeroContentProps {
   children?: React.ReactNode;
@@ -135,12 +136,13 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
         </div>
       </div>
 
-      {/* Right Side Portrait - Pushed back to allow overlap */}
-      <div className="absolute right-[5vw] top-1/2 -translate-y-1/2 flex justify-center items-center pointer-events-none z-0">
+      {/* Right Side Portrait / Artifact Container */}
+      <div className="absolute right-0 top-0 flex justify-center items-center pointer-events-auto z-0 w-[50vw] h-[100vh] overflow-hidden">
         <div 
           id="hero-portrait-container" 
-          className="hero-portrait-container w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full border border-dashed border-primary/30 flex justify-center items-center overflow-hidden relative mix-blend-luminosity opacity-80"
+          className="hero-portrait-container w-full h-full flex justify-center items-center relative opacity-80"
         >
+           <HeroArtifact />
            {props.children}
         </div>
       </div>
