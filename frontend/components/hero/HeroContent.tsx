@@ -86,7 +86,7 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
   }));
 
   return (
-    <div ref={containerRef} className="relative z-10 flex flex-col justify-center px-4 md:px-12 pointer-events-none w-full h-full overflow-hidden text-white">
+    <div ref={containerRef} className="relative flex flex-col justify-center px-4 md:px-12 pointer-events-none w-full h-full overflow-hidden text-white">
       
       {/* Corner Micro-copy */}
       <div className="absolute top-8 left-8 micro-copy opacity-0 font-mono text-xs text-primary tracking-widest">
@@ -100,33 +100,33 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
       </div>
 
       {/* Main Heading Entity - Massive and Overlapping */}
-      <div className="hero-entity flex flex-col relative z-20 mt-12 w-full text-left will-change-transform">
+      <div className="hero-entity flex flex-col relative z-20 mt-12 w-full text-left mix-blend-difference will-change-transform">
         <div className="overflow-hidden">
-          <h1 className="hero-content-item text-[clamp(4rem,13vw,18rem)] leading-[0.8] font-extrabold tracking-tighter font-heading text-white mix-blend-difference will-change-transform">
+          <h1 className="hero-content-item text-[clamp(4rem,13vw,18rem)] leading-[0.8] font-extrabold tracking-tighter font-heading text-white will-change-transform">
             Joemarc
           </h1>
         </div>
         <div className="overflow-hidden">
-          <h1 className="hero-content-item text-[clamp(4rem,13vw,18rem)] leading-[0.8] font-extrabold tracking-tighter font-heading text-primary mix-blend-difference ml-[clamp(2rem,7vw,12rem)] will-change-transform">
+          <h1 className="hero-content-item text-[clamp(4rem,13vw,18rem)] leading-[0.8] font-extrabold tracking-tighter font-heading text-primary ml-[clamp(2rem,7vw,12rem)] will-change-transform">
             Castillo
           </h1>
         </div>
       </div>
 
       {/* Description Entity - Asymmetrical placement */}
-      <div className="hero-entity mt-16 ml-[10vw] max-w-lg z-20 will-change-transform">
+      <div className="hero-entity mt-16 ml-[10vw] max-w-lg z-20 mix-blend-difference will-change-transform">
         <div className="overflow-hidden">
-          <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide mix-blend-difference will-change-transform">
+          <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide will-change-transform">
             A Third Year Computer Science Student.
           </div>
         </div>
         <div className="overflow-hidden">
-          <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide mix-blend-difference will-change-transform">
+          <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide will-change-transform">
             Specializes in leading teams, engineering agentic systems, and deploying projects
           </div>
         </div>
         <div className="overflow-hidden">
-          <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide mb-10 mix-blend-difference will-change-transform">
+          <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide mb-10 will-change-transform">
             with passion, integrity, and quality.
           </div>
         </div>
