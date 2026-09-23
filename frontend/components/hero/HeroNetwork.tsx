@@ -72,8 +72,8 @@ export default function HeroNetwork() {
       duration: 0.4 
     }, 0);
 
-    // 3. SEAMLESS HANDOFF: Use tl.set for instant visibility toggle at exactly 0.4
-    tl.set('.hero-core-dot, .hero-core-glow', { opacity: 0 }, 0.4);
+    // 3. SEAMLESS HANDOFF: Fade out the center orb smoothly
+    tl.to('.hero-core-dot, .hero-core-glow', { opacity: 0, duration: 0.1 }, 0.35);
     tl.set('.split-orb-top, .split-orb-bottom', { opacity: 1 }, 0.4);
 
     // 4. Reveal two SVG arcs and translate the split orbs
@@ -104,13 +104,16 @@ export default function HeroNetwork() {
       0.4
     );
 
-    // 5. Orbs combine at the bottom (270deg), flare up, and fade out (1.2-1.3)
+    // 5. Orbs combine at the bottom (270deg), flare up, and STAY PERSISTENT
     tl.to('.split-orb-top, .split-orb-bottom', { 
       scale: 1.8, 
-      opacity: 0, 
       duration: 0.15, 
       ease: 'power1.out' 
     }, 1.2);
+
+    // Crossfade the solid drawing border into the final dashed segmented glowing border
+    tl.to('.frame-circle-top, .frame-circle-bottom', { opacity: 0, duration: 0.2 }, 1.2);
+    tl.fromTo('.frame-circle-final', { opacity: 0 }, { opacity: 1, duration: 0.2 }, 1.2);
 
     // 6. Fade in Portrait Image securely inside the frame
     tl.to('.portrait-img', { opacity: 1, duration: 0.3, ease: 'power1.inOut' }, 1.3);
@@ -145,6 +148,17 @@ export default function HeroNetwork() {
             strokeDasharray="100" strokeDashoffset="-100"
             strokeLinecap="round"
           />
+
+          {/* Final Segmented Glowing Border (Fades in at the end) */}
+          <path 
+            className="frame-circle-final"
+            d="M 2 50 a 48 48 0 1 1 96 0 a 48 48 0 1 1 -96 0"
+            fill="none" stroke="var(--color-primary)" strokeWidth="0.8" 
+            pathLength="100"
+            strokeDasharray="15 3 5 3 20 4 10 3 25 3 9 0"
+            strokeLinecap="round"
+            style={{ opacity: 0, filter: 'drop-shadow(0 0 2px var(--color-primary))' }}
+          />
           
           {/* Split Orbs 
               We include a transparent rect to force the SVG <g> bounding box to be 100x100, 
@@ -161,12 +175,14 @@ export default function HeroNetwork() {
              <circle cx="2" cy="50" r="3" fill="var(--color-primary)" opacity="0.3" style={{ filter: 'blur(1px)' }} />
           </g>
         </svg>
-        <Image 
-          src={portrait}
-          alt="Portrait"
-          fill
-          className="portrait-img opacity-0 object-contain p-4 z-0"
-        />
+        <div style={{ position: 'absolute', top: '4%', left: '4%', width: '92%', height: '92%', borderRadius: '50%', overflow: 'hidden', zIndex: 0 }}>
+          <Image 
+            src={portrait}
+            alt="Portrait"
+            fill
+            className="portrait-img opacity-0 object-cover"
+          />
+        </div>
       </HeroContent>
     </div>
   );

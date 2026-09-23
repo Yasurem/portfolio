@@ -66,7 +66,7 @@ const HeroContent = forwardRef<HTMLDivElement, HeroContentProps>((props, ref) =>
       <div className="absolute right-[5vw] top-1/2 -translate-y-1/2 flex justify-center items-center pointer-events-none">
         <div 
           id="hero-portrait-container" 
-          className="hero-portrait-container w-72 h-72 md:w-[30vw] md:h-[30vw] lg:w-[30rem] lg:h-[30rem] rounded-full border-4 border-dashed border-transparent flex justify-center items-center overflow-hidden relative"
+          className="hero-portrait-container w-50 h-50 md:w-[20vw] md:h-[20vw] lg:w-[30rem] lg:h-[30rem] rounded-full border-4 border-dashed border-transparent flex justify-center items-center overflow-hidden relative"
         >
            {props.children}
         </div>
