@@ -10,31 +10,14 @@ interface HeroContentProps {
 
 export interface HeroContentRef {
   getScrollTimeline: () => gsap.core.Timeline;
+  getIntroTimeline: () => gsap.core.Timeline;
 }
 
 const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
-    // Reveal text using clip-path instead of simple translate
-    gsap.set('.hero-content-item', { clipPath: 'inset(100% 0 0 0)' });
-    
-    gsap.to('.hero-content-item', {
-      clipPath: 'inset(0% 0 0 0)',
-      duration: 1.5,
-      ease: 'expo.out',
-      delay: 2.3,
-      stagger: 0.15
-    });
-
-    gsap.to('.micro-copy', {
-      opacity: 1,
-      duration: 1,
-      ease: 'power2.out',
-      delay: 2.8,
-      stagger: 0.1
-    });
-
+    // Empty scope as animations moved to getIntroTimeline
   }, { scope: containerRef });
 
   useImperativeHandle(ref, () => ({
@@ -42,7 +25,7 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
       const tl = gsap.timeline();
       
       tl.to('.hero-entity', {
-        x: '-20vw',
+        x: '-5vw',
         ease: 'power1.inOut',
         stagger: 0.05,
         duration: 0.2
@@ -53,6 +36,39 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
         duration: 0.3, 
         ease: 'power1.inOut' 
       }, 1.3);
+
+      return tl;
+    },
+    getIntroTimeline: () => {
+      const tl = gsap.timeline();
+      
+      // Initial state
+      tl.set('.hero-content-item', { clipPath: 'inset(100% 0 0 0)' });
+      tl.set('.hero-portrait-container', { scale: 1.05, opacity: 0 });
+      
+      // Phase 2 (250ms)
+      tl.to('.hero-content-item', {
+        clipPath: 'inset(0% 0 0 0)',
+        duration: 1.5,
+        ease: 'power3.out',
+        stagger: 0.15
+      }, 0.25);
+
+      tl.to('.micro-copy', {
+        opacity: 1,
+        duration: 1,
+        ease: 'power2.out',
+        stagger: 0.1
+      }, 0.25);
+
+      // Phase 3 (When Phase 2 is ~70% done)
+      // Duration is 1.5s, 70% of 1.5s is 1.05s
+      tl.to('.hero-portrait-container', {
+        scale: 1,
+        opacity: 1,
+        duration: 1,
+        ease: 'power3.out'
+      }, 0.25 + 1.05);
 
       return tl;
     }
@@ -75,12 +91,12 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
       {/* Main Heading Entity - Massive and Overlapping */}
       <div className="hero-entity flex flex-col relative z-20 mt-12 w-full text-left">
         <div className="overflow-hidden">
-          <h1 className="hero-content-item text-[12vw] leading-[0.8] font-extrabold tracking-tighter font-heading text-white mix-blend-difference">
+          <h1 className="hero-content-item text-[clamp(4rem,13vw,18rem)] leading-[0.8] font-extrabold tracking-tighter font-heading text-white mix-blend-difference">
             Joemarc
           </h1>
         </div>
         <div className="overflow-hidden">
-          <h1 className="hero-content-item text-[12vw] leading-[0.8] font-extrabold tracking-tighter font-heading text-primary mix-blend-difference ml-[8vw]">
+          <h1 className="hero-content-item text-[clamp(4rem,13vw,18rem)] leading-[0.8] font-extrabold tracking-tighter font-heading text-primary mix-blend-difference ml-[clamp(2rem,7vw,12rem)]">
             Castillo
           </h1>
         </div>
@@ -90,17 +106,17 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
       <div className="hero-entity mt-16 ml-[10vw] max-w-lg z-20">
         <div className="overflow-hidden">
           <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide mix-blend-difference">
-            Initializing advanced vector sequences.
+            A Third Year Computer Science Student.
           </div>
         </div>
         <div className="overflow-hidden">
           <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide mix-blend-difference">
-            Building digital experiences with precision,
+            Engineering machine learning and 
           </div>
         </div>
         <div className="overflow-hidden">
           <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide mb-10 mix-blend-difference">
-            performance, and aesthetic clarity.
+            integrity and clarity.
           </div>
         </div>
       </div>

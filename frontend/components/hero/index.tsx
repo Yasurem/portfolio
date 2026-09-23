@@ -18,6 +18,12 @@ export default function Hero() {
   const bgRef = useRef<HeroBackgroundRef>(null);
 
   useGSAP(() => {
+    // Intro Timeline
+    const introTl = gsap.timeline();
+    if (textRef.current?.getIntroTimeline) {
+      introTl.add(textRef.current.getIntroTimeline(), 0);
+    }
+
     // 0. Ensure SVG transforms rotate from the exact center of the container
     gsap.set('.split-orb-top, .split-orb-bottom', { 
       transformOrigin: '50% 50%',

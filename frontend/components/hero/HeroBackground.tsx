@@ -44,9 +44,9 @@ const HeroBackground = forwardRef<HeroBackgroundRef, {}>((props, ref) => {
     });
 
     gridContainerRef.current.style.maskImage = finalMask;
-    gridContainerRef.current.style.WebkitMaskImage = finalMask;
+    gridContainerRef.current.style.webkitMaskImage = finalMask;
     gridContainerRef.current.style.maskComposite = 'add';
-    gridContainerRef.current.style.WebkitMaskComposite = 'add';
+    gridContainerRef.current.style.webkitMaskComposite = 'add';
   };
 
   useEffect(() => {
@@ -232,8 +232,8 @@ const HeroBackground = forwardRef<HeroBackgroundRef, {}>((props, ref) => {
               d="" 
               fill="none"
               stroke="color-mix(in srgb, var(--color-charcoal) 80%, white)" 
-              strokeWidth={line.isCenter ? "0.4" : "0.2"}
-              opacity={line.isCenter ? "0.7" : "0.3"}
+              strokeWidth={line.isCenter ? "1.5" : "1"}
+              opacity={line.isCenter ? "0.4" : "0.15"}
             />
           ))}
 
