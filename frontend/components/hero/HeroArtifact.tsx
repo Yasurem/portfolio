@@ -4,7 +4,7 @@
 
 import React, { useRef, useMemo, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, Environment, Edges } from '@react-three/drei';
+import { useGLTF, Environment, Edges, PerformanceMonitor } from '@react-three/drei';
 import * as THREE from 'three';
 
 // =========================================================================
@@ -42,26 +42,32 @@ const PALETTE = ['#FF3B7C', '#FF7A00', '#88E716', '#00C3FF', '#7E8FAD', '#171B33
 
 export function HeroArtifact() {
   const [focusedMesh, setFocusedMesh] = useState<THREE.Object3D | null>(null);
+  const [dpr, setDpr] = useState<number | [number, number]>([1, 2]);
+  const [isLowPerf, setIsLowPerf] = useState(false);
 
   return (
     <Canvas
       camera={{ position: CAMERA_UNFOCUSED_POS.toArray(), fov: 45 }}
       style={{ width: '100%', height: '100%', pointerEvents: 'auto' }}
       onPointerMissed={() => setFocusedMesh(null)}
-      dpr={[1, 2]}
+      dpr={dpr}
       gl={{ antialias: true, powerPreference: "high-performance" }}
     >
+      <PerformanceMonitor onDecline={() => {
+        setDpr(1);
+        setIsLowPerf(true);
+      }} />
       <ambientLight intensity={0.8} />
       <directionalLight position={[10, 20, 10]} intensity={1.5} />
       <Environment preset="city" />
       <React.Suspense fallback={null}>
-        <Model focusedMesh={focusedMesh} setFocusedMesh={setFocusedMesh} />
+        <Model focusedMesh={focusedMesh} setFocusedMesh={setFocusedMesh} isLowPerf={isLowPerf} />
       </React.Suspense>
     </Canvas>
   );
 }
 
-function Model({ focusedMesh, setFocusedMesh }: { focusedMesh: THREE.Object3D | null, setFocusedMesh: any }) {
+function Model({ focusedMesh, setFocusedMesh, isLowPerf }: { focusedMesh: THREE.Object3D | null, setFocusedMesh: any, isLowPerf: boolean }) {
   const { nodes } = useGLTF('/models/isometric_cubes.gltf');
   const { camera } = useThree();
   const lookTarget = useRef(new THREE.Vector3().copy(CAMERA_UNFOCUSED_LOOK));
@@ -293,23 +299,25 @@ function Model({ focusedMesh, setFocusedMesh }: { focusedMesh: THREE.Object3D | 
       </group>
 
       {/* 2. Background Debris Field */}
-      <group ref={debrisGroupRef}>
-        {debrisPieces.map((piece, i) => (
-          <mesh
-            key={`debris-${i}`}
-            geometry={piece.mesh.geometry}
-            material={piece.mesh.material}
-            position={piece.pos}
-            rotation={piece.rot}
-            scale={DEBRIS_SCALE}
-            onClick={(e) => handleDebrisClick(e, e.object)}
-            onPointerOver={() => { document.body.style.cursor = 'crosshair' }}
-            onPointerOut={() => { document.body.style.cursor = 'auto' }}
-          >
-            <Edges scale={1.02} threshold={15} color="#0b1021" />
-          </mesh>
-        ))}
-      </group>
+      {!isLowPerf && (
+        <group ref={debrisGroupRef}>
+          {debrisPieces.map((piece, i) => (
+            <mesh
+              key={`debris-${i}`}
+              geometry={piece.mesh.geometry}
+              material={piece.mesh.material}
+              position={piece.pos}
+              rotation={piece.rot}
+              scale={DEBRIS_SCALE}
+              onClick={(e) => handleDebrisClick(e, e.object)}
+              onPointerOver={() => { document.body.style.cursor = 'crosshair' }}
+              onPointerOut={() => { document.body.style.cursor = 'auto' }}
+            >
+              <Edges scale={1.02} threshold={15} color="#0b1021" />
+            </mesh>
+          ))}
+        </group>
+      )}
     </group>
   );
 }
