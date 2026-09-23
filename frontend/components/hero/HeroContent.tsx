@@ -112,12 +112,12 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
         </div>
         <div className="overflow-hidden">
           <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide mix-blend-difference will-change-transform">
-            Engineering machine learning and 
+            Specializes in leading teams, engineering agentic systems, and deploying projects
           </div>
         </div>
         <div className="overflow-hidden">
           <div className="hero-content-item text-lg md:text-xl text-gray-300 font-light tracking-wide mb-10 mix-blend-difference will-change-transform">
-            integrity and clarity.
+            with passion, integrity, and quality.
           </div>
         </div>
       </div>

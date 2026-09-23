@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lhci": "lhci autorun",
     "lint": "eslint"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "three": "^0.186.0"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
