@@ -4,11 +4,7 @@ import React, { useRef, forwardRef } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 
-interface HeroContentProps {
-  children?: React.ReactNode;
-}
-
-const HeroContent = forwardRef<HTMLDivElement, HeroContentProps>((props, ref) => {
+const HeroContent = forwardRef<HTMLDivElement>((props, ref) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useGSAP(() => {
@@ -63,12 +59,12 @@ const HeroContent = forwardRef<HTMLDivElement, HeroContentProps>((props, ref) =>
       </div>
 
       {/* Right Side Portrait Placeholder for Final Layout */}
-      <div className="absolute right-[5vw] top-1/2 -translate-y-1/2 flex justify-center items-center pointer-events-none">
+      <div className="absolute right-[10vw] top-1/2 -translate-y-1/2 flex justify-center items-center pointer-events-none">
         <div 
           id="hero-portrait-container" 
-          className="hero-portrait-container w-72 h-72 md:w-[30vw] md:h-[30vw] lg:w-[30rem] lg:h-[30rem] rounded-full border-4 border-dashed border-transparent flex justify-center items-center overflow-hidden relative"
+          className="hero-portrait-container w-72 h-72 md:w-[28rem] md:h-[28rem] rounded-full border-4 border-dashed border-transparent flex justify-center items-center overflow-hidden relative"
         >
-           {props.children}
+           {/* Motion Engineering Portal Hooks Here */}
         </div>
       </div>
 

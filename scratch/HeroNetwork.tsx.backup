@@ -1,0 +1,132 @@
+'use client';
+
+import React, { useRef, useState, useEffect } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
+import Image from 'next/image';
+import { createPortal } from 'react-dom';
+import portrait from '@/components/hero/img/Portrait.svg';
+
+import HeroBackground from './HeroBackground';
+import HeroContent from './HeroContent';
+
+gsap.registerPlugin(ScrollTrigger);
+
+export default function HeroNetwork() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<HTMLDivElement>(null);
+
+  const [portraitNode, setPortraitNode] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortraitNode(document.getElementById('hero-portrait-container'));
+  }, []);
+
+  // GSAP ScrollTrigger Animation for the Split Layout and Math Frame Drawing
+  useGSAP(() => {
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: 'top top',
+        end: '+=1500', 
+        scrub: 1, 
+        pin: true,
+        invalidateOnRefresh: true,
+      }
+    });
+
+    // 1. Text splits to the left (0-0.2 timeline progress)
+    tl.to('.hero-entity', {
+      x: '-42vw',
+      xPercent: 50,
+      ease: 'power1.inOut',
+      stagger: 0.05,
+      duration: 0.2
+    }, 0);
+
+    // Hide normal math paths so the UI stays clean
+    tl.to('.math-path', { opacity: 0, duration: 0.1 }, 0);
+    tl.to('.portrait-frame-svg', { opacity: 1, duration: 0.1 }, 0);
+
+    // 2. Converge orb to the center of the portrait container (0-0.4)
+    tl.to('.hero-core-dot, .hero-core-glow', { 
+      x: () => {
+        const pc = document.getElementById('hero-portrait-container');
+        if (pc) {
+          const rect = pc.getBoundingClientRect();
+          return rect.left + rect.width / 2 - window.innerWidth / 2;
+        }
+        return window.innerWidth * 0.25;
+      }, 
+      y: () => {
+        const pc = document.getElementById('hero-portrait-container');
+        if (pc) {
+          const rect = pc.getBoundingClientRect();
+          return rect.top + rect.height / 2 - window.innerHeight / 2;
+        }
+        return 0;
+      }, 
+      ease: 'power2.inOut', 
+      duration: 0.4 
+    }, 0);
+
+    // 3. Orb disappears right when it hits the container
+    tl.to('.hero-core-dot, .hero-core-glow', { opacity: 0, duration: 0.05 }, 0.4);
+
+    // 4. Reveal two SVG arcs that trace out a perfect circle
+    tl.fromTo('.frame-circle-right', 
+      { strokeDashoffset: 100 }, 
+      { strokeDashoffset: 0, duration: 0.4, ease: 'power2.inOut' }, 
+      0.4
+    );
+    tl.fromTo('.frame-circle-left', 
+      { strokeDashoffset: -100 }, 
+      { strokeDashoffset: 0, duration: 0.4, ease: 'power2.inOut' }, 
+      0.4
+    );
+
+    // 5. Fade in Portrait Image securely inside the frame (0.8-1.0)
+    tl.to('.portrait-img', { opacity: 1, duration: 0.2, ease: 'power1.inOut' }, 0.8);
+
+  }, { scope: containerRef });
+
+  return (
+    <div ref={containerRef} className="relative w-full h-screen bg-black overflow-hidden flex items-center justify-center">
+      <HeroBackground ref={svgRef} />
+      
+      <HeroContent ref={textRef} />
+
+      {/* Render the drawing SVG and Image directly inside the portrait container */}
+      {portraitNode && createPortal(
+        <>
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10 portrait-frame-svg" style={{ opacity: 0, transform: 'rotate(-90deg)' }}>
+            <circle 
+              className="frame-circle-right"
+              cx="50%" cy="50%" r="48%" 
+              fill="none" stroke="#ff3333" strokeWidth="4" 
+              pathLength="100"
+              strokeDasharray="100" strokeDashoffset="100"
+            />
+            {/* The left circle draws in the opposite direction (counter-clockwise) */}
+            <circle 
+              className="frame-circle-left"
+              cx="50%" cy="50%" r="48%" 
+              fill="none" stroke="#ff3333" strokeWidth="4" 
+              pathLength="100"
+              strokeDasharray="100" strokeDashoffset="-100"
+            />
+          </svg>
+          <Image 
+            src={portrait}
+            alt="Portrait"
+            fill
+            className="portrait-img opacity-0 object-contain p-4 z-0"
+          />
+        </>,
+        portraitNode
+      )}
+    </div>
+  );
+}
