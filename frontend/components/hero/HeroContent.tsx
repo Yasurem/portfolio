@@ -86,7 +86,7 @@ const HeroContent = forwardRef<HeroContentRef, HeroContentProps>((props, ref) =>
   }));
 
   return (
-    <div ref={containerRef} className="relative z-10 flex flex-col justify-center px-4 md:px-12 pointer-events-none w-full h-full overflow-hidden mix-blend-difference text-white">
+    <div ref={containerRef} className="relative z-10 flex flex-col justify-center px-4 md:px-12 pointer-events-none w-full h-full overflow-hidden text-white">
       
       {/* Corner Micro-copy */}
       <div className="absolute top-8 left-8 micro-copy opacity-0 font-mono text-xs text-primary tracking-widest">
