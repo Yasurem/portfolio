@@ -36,6 +36,7 @@ const _meshWorldPos = new THREE.Vector3();
 const _rotQuat = new THREE.Quaternion();
 const _tempPos = new THREE.Vector3();
 const _tempQuat = new THREE.Quaternion();
+const _tempEuler = new THREE.Euler();
 const _axes = [
   new THREE.Vector3(1, 0, 0),
   new THREE.Vector3(0, 1, 0),
@@ -76,6 +77,10 @@ export function Hero3DRubiks() {
       dpr={dpr}
       gl={{ antialias: true, powerPreference: "high-performance" }}
     >
+      <PerformanceMonitor 
+        onDecline={() => { setIsLowPerf(true); setDpr([1, 1]); }} 
+        onIncline={() => setIsLowPerf(false)} 
+      />
       <ambientLight intensity={0.8} />
       <directionalLight position={[10, 20, 10]} intensity={1.5} />
       {(!isLowPerf && !isMobile) && <Environment preset="city" />}
@@ -106,6 +111,20 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
     // eslint-disable-next-line react-hooks/purity
     const shuffled = [...meshes].sort(() => 0.5 - Math.random());
     
+    // CACHE OPTIMIZATION: Instead of cloning 27 materials, we pre-generate the 6 colors
+    // and share them. This prevents compiling 21 redundant shader programs.
+    const baseMat = (meshes[0]?.material as THREE.MeshStandardMaterial) || new THREE.MeshStandardMaterial();
+    const cachedMaterials = PALETTE.map(hex => {
+      const mat = baseMat.clone();
+      const color = new THREE.Color(hex);
+      mat.color = color;
+      mat.emissive = color;
+      mat.emissiveIntensity = 0.15;
+      mat.roughness = 1;
+      mat.metalness = 0;
+      return mat;
+    });
+
     // 1. 27 original pieces for the Rubik's Cube
     const rubiks = shuffled.slice(0, 27).map((mesh, i) => {
       const gridSize = 3;
@@ -115,22 +134,10 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
       const cy = Math.floor((i / gridSize) % gridSize) * RUBIKS_CUBE_SPACING - offset;
       const cz = Math.floor(i / (gridSize * gridSize)) * RUBIKS_CUBE_SPACING - offset;
 
-      // Clone material to apply a color tint without affecting other pieces/debris
-      const coloredMat = (mesh.material as THREE.MeshStandardMaterial).clone();
-      const faceColor = new THREE.Color(PALETTE[i % PALETTE.length]);
-      
-      coloredMat.color = faceColor;
-      
-      // Add subtle emissive lift and make it completely matte (soft)
-      coloredMat.emissive = faceColor;
-      coloredMat.emissiveIntensity = .15; 
-      coloredMat.roughness = 1; 
-      coloredMat.metalness = 0;
-
       return { 
         mesh, 
         pos: new THREE.Vector3(cx, cy, cz),
-        material: coloredMat
+        material: cachedMaterials[i % PALETTE.length]
       };
     });
 
@@ -275,11 +282,11 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
           mesh.position.z = Math.round(mesh.position.z / RUBIKS_CUBE_SPACING) * RUBIKS_CUBE_SPACING;
           
           const PI_2 = Math.PI / 2;
-          const euler = new THREE.Euler().setFromQuaternion(mesh.quaternion);
-          euler.x = Math.round(euler.x / PI_2) * PI_2;
-          euler.y = Math.round(euler.y / PI_2) * PI_2;
-          euler.z = Math.round(euler.z / PI_2) * PI_2;
-          mesh.quaternion.setFromEuler(euler);
+          _tempEuler.setFromQuaternion(mesh.quaternion);
+          _tempEuler.x = Math.round(_tempEuler.x / PI_2) * PI_2;
+          _tempEuler.y = Math.round(_tempEuler.y / PI_2) * PI_2;
+          _tempEuler.z = Math.round(_tempEuler.z / PI_2) * PI_2;
+          mesh.quaternion.setFromEuler(_tempEuler);
         }
       }
     }
@@ -301,7 +308,7 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
       
       // We want the cube to start on the right half of the screen (Camera needs to move left, e.g., X = -8)
       // And end up on the left half of the screen (Camera needs to move right, e.g., X = 5)
-      const startX = -8;
+      const startX = -10;
       const endX = 10;
       const panOffset = startX + (zoom * (endX - startX)); 
       

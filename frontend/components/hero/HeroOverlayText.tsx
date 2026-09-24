@@ -40,7 +40,7 @@ const HeroOverlayText = forwardRef<HeroOverlayTextRef, HeroOverlayTextProps>((pr
       
       // Initial state
       tl.set('.hero-content-item', { clipPath: 'inset(100% 0 0 0)' });
-      tl.set('.hero-portrait-container', { scale: 1.05, opacity: 0 });
+      tl.set('.hero-portrait-container', { opacity: 0 });
       
       // Phase 2 (250ms)
       tl.to('.hero-content-item', {
@@ -59,7 +59,6 @@ const HeroOverlayText = forwardRef<HeroOverlayTextRef, HeroOverlayTextProps>((pr
 
       // Phase 3 (When Phase 2 is ~70% done)
       tl.to('.hero-portrait-container', {
-        scale: 1,
         opacity: 1,
         duration: 1,
         ease: 'power3.out'
