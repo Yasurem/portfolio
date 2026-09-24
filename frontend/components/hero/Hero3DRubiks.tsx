@@ -112,7 +112,6 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
     const shuffled = [...meshes].sort(() => 0.5 - Math.random());
     
     // CACHE OPTIMIZATION: Instead of cloning 27 materials, we pre-generate the 6 colors
-    // and share them. This prevents compiling 21 redundant shader programs.
     const baseMat = (meshes[0]?.material as THREE.MeshStandardMaterial) || new THREE.MeshStandardMaterial();
     const cachedMaterials = PALETTE.map(hex => {
       const mat = baseMat.clone();
@@ -188,11 +187,19 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
 
   useFrame((state, delta) => {
     const clock = state.clock;
+    const zoom = (window as any).heroCameraZoom || 0;
 
-    // Background Rotations
+    // Background Rotations & Alignment
     if (heroGroupRef.current) {
-      heroGroupRef.current.rotation.y += delta * 0.2;
-      heroGroupRef.current.rotation.x = Math.sin(clock.elapsedTime * 0.5) * 0.1;
+      if (zoom > .8) {
+        // Step 1: Smoothly snap the cube to face the camera when scrolling
+        heroGroupRef.current.rotation.y = THREE.MathUtils.lerp(heroGroupRef.current.rotation.y, 0, 0.1);
+        heroGroupRef.current.rotation.x = THREE.MathUtils.lerp(heroGroupRef.current.rotation.x, 0, 0.1);
+      } else {
+        // Idle floating
+        heroGroupRef.current.rotation.y += delta * 0.2;
+        heroGroupRef.current.rotation.x = Math.sin(clock.elapsedTime * 0.5) * 0.1;
+      }
     }
 
     if (debrisGroupRef.current) {
@@ -204,7 +211,7 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
     const anim = animState.current;
     if (!anim.isAnimating) {
       // Randomly trigger animation every few seconds
-      if (clock.elapsedTime - anim.lastAnimTime > 2.0 + Math.random()) {
+      if (zoom < 0.1 && clock.elapsedTime - anim.lastAnimTime > 2.0 + Math.random()) {
         const axisIdx = Math.floor(Math.random() * 3);
         const axis = _axes[axisIdx];
         const logicalAxis = ['x', 'y', 'z'][axisIdx] as 'x' | 'y' | 'z';
@@ -302,8 +309,6 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
       _idealLook.copy(CAMERA_UNFOCUSED_LOOK);
 
       // Apply the native GSAP zoom proxy for buttery smooth cinematic transitions
-      const zoom = (window as any).heroCameraZoom || 0;
-      
       _targetPos.z -= zoom * 15; // Keep your custom zoom of 10
       
       // We want the cube to start on the right half of the screen (Camera needs to move left, e.g., X = -8)
