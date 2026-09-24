@@ -79,9 +79,10 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
   useGSAP(() => {
     if (dimensions.width === 0) return;
 
+    // Use matchMedia for responsive animations and automatic cleanup on unmount
     const mm = gsap.matchMedia();
 
-    // Common animations
+    // Common animations (continuous loops, automatically managed by useGSAP scope)
     gsap.to('.hero-core-dot', {
       scale: 1.2, opacity: 0.8, duration: 3, repeat: -1, yoyo: true, ease: 'sine.inOut'
     });

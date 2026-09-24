@@ -27,10 +27,10 @@ const HeroOverlayText = forwardRef<HeroOverlayTextRef, HeroOverlayTextProps>((pr
       if (!isDesktop) return tl;
 
       tl.to('.hero-entity', {
-        x: '-5vw',
-        ease: 'power1.inOut',
+        x: '-100vw', // Fly completely off-screen
+        ease: 'power2.in',
         stagger: 0.05,
-        duration: 0.2
+        duration: 0.2 // Very fast
       }, 0);
 
       return tl;

@@ -152,6 +152,17 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
     return { rubiksPieces: rubiks, debrisPieces: debris };
   }, [meshes]);
 
+  // Clean up dynamically created materials to prevent WebGL memory leaks
+  useEffect(() => {
+    return () => {
+      rubiksPieces.forEach((piece) => {
+        if (piece.material && typeof piece.material.dispose === 'function') {
+          piece.material.dispose();
+        }
+      });
+    };
+  }, [rubiksPieces]);
+
   const heroGroupRef = useRef<THREE.Group>(null);
   const debrisGroupRef = useRef<THREE.Group>(null);
   const rubiksRefs = useRef<(THREE.Mesh | null)[]>([]);
@@ -185,21 +196,25 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
     // --- Idle Rubik's Slice Animation ---
     const anim = animState.current;
     if (!anim.isAnimating) {
+      // Randomly trigger animation every few seconds
       if (clock.elapsedTime - anim.lastAnimTime > 2.0 + Math.random()) {
         const axisIdx = Math.floor(Math.random() * 3);
         const axis = _axes[axisIdx];
         const logicalAxis = ['x', 'y', 'z'][axisIdx] as 'x' | 'y' | 'z';
         
+        // Choose a slice to rotate (-1, 0, or 1 in logical grid space)
         const sliceIndex = Math.floor(Math.random() * 3) - 1; 
         
         anim.activeIndices = [];
         let idx = 0;
         
+        // Find all pieces that belong to the chosen slice
         for (let i = 0; i < 27; i++) {
           const mesh = rubiksRefs.current[i];
           if (!mesh) continue;
           
           const posVal = mesh.position[logicalAxis];
+          // Round to avoid floating point inaccuracies when identifying the slice
           const logicalPos = Math.round(posVal / RUBIKS_CUBE_SPACING);
           
           if (logicalPos === sliceIndex) {
@@ -214,6 +229,7 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
           anim.isAnimating = true;
           anim.progress = 0;
           anim.axis.copy(axis);
+          // Randomly rotate 90 degrees forward or backward
           anim.angle = (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 2);
         }
       }
@@ -222,10 +238,11 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
       anim.progress += delta * speed;
       const t = Math.min(anim.progress, 1.0);
       
-      // easeInOutSine
+      // Apply easeInOutSine easing function for smooth acceleration and deceleration
       const ease = -(Math.cos(Math.PI * t) - 1) / 2;
       const currentAngle = anim.angle * ease;
       
+      // Compute the rotation quaternion for the current frame
       _rotQuat.setFromAxisAngle(anim.axis, currentAngle);
       
       for (let j = 0; j < anim.activeIndices.length; j++) {
@@ -233,9 +250,11 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
         const mesh = rubiksRefs.current[meshIdx];
         if (!mesh) continue;
         
+        // Rotate the position vector around the origin to orbit the piece
         _tempPos.copy(anim.startPositions[j]).applyQuaternion(_rotQuat);
         mesh.position.copy(_tempPos);
         
+        // Multiply quaternions to apply the local rotation to the piece itself
         _tempQuat.copy(_rotQuat).multiply(anim.startQuaternions[j]);
         mesh.quaternion.copy(_tempQuat);
       }
@@ -244,7 +263,8 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
         anim.isAnimating = false;
         anim.lastAnimTime = clock.elapsedTime;
         
-        // Snap to exact values to prevent drift
+        // Snap to exact mathematical values at the end of the animation
+        // This is crucial to prevent floating point drift over multiple rotations
         for (let j = 0; j < anim.activeIndices.length; j++) {
           const meshIdx = anim.activeIndices[j];
           const mesh = rubiksRefs.current[meshIdx];
@@ -271,8 +291,22 @@ function Model({ focusedMesh, setFocusedMesh, isLowPerf, isMobile }: { focusedMe
       _idealLook.copy(_meshWorldPos).add(CAMERA_FOCUSED_LOOK_OFFSET);
       _targetPos.copy(_meshWorldPos).add(CAMERA_FOCUSED_POS_OFFSET); 
     } else {
-      _targetPos.copy(CAMERA_UNFOCUSED_POS); 
+      _targetPos.copy(CAMERA_UNFOCUSED_POS);
       _idealLook.copy(CAMERA_UNFOCUSED_LOOK);
+
+      // Apply the native GSAP zoom proxy for buttery smooth cinematic transitions
+      const zoom = (window as any).heroCameraZoom || 0;
+      
+      _targetPos.z -= zoom * 15; // Keep your custom zoom of 10
+      
+      // We want the cube to start on the right half of the screen (Camera needs to move left, e.g., X = -8)
+      // And end up on the left half of the screen (Camera needs to move right, e.g., X = 5)
+      const startX = -8;
+      const endX = 10;
+      const panOffset = startX + (zoom * (endX - startX)); 
+      
+      _targetPos.x += panOffset;
+      _idealLook.x += panOffset;
     }
 
     camera.position.lerp(_targetPos, 0.04);
