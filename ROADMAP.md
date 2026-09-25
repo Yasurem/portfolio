@@ -2,27 +2,33 @@
 
 This roadmap follows a "Vertical Slice" and MVP (Minimum Viable Product) philosophy. Every iteration results in a fully shippable, deployable product.
 
-## Iteration 1: The Walking Skeleton (v0.1)
+## Iteration 1: The Walking Skeleton (v0.1) - ✅ COMPLETED
 **Goal:** A deployed, bare-bones application proving the decoupled architecture works.
-- [ ] Frontend: Next.js landing page with a basic Tailwind layout and a simple GSAP fade-in.
-- [ ] Backend: FastAPI health-check endpoint (`/api/health`).
-- [ ] Integration: Next.js Server Action fetches from FastAPI to display a "System Online" status.
-- [ ] DevOps: Docker compose verified; ready for initial deployment.
+- [x] Frontend: Next.js landing page with a basic Tailwind layout and a simple GSAP fade-in.
+- [x] Backend: FastAPI health-check endpoint (`/api/health`).
+- [x] Integration: Next.js Server Action fetches from FastAPI to display a "System Online" status.
+- [x] DevOps: Docker compose verified; ready for initial deployment.
 
-## Iteration 2: The Animated Experience (v0.2)
+## Iteration 2: The Animated Experience (v0.2) - ✅ COMPLETED
 **Goal:** A visually impressive static portfolio.
-- [ ] Frontend: GSAP ScrollTrigger implementations for project showcases.
-- [ ] Frontend: Anime.js micro-interactions on buttons/links.
-- [ ] Frontend: React Three Fiber (R3F) base canvas setup with a placeholder 3D object.
+- [x] Frontend: GSAP ScrollTrigger implementations for project showcases.
+- [x] Frontend: Cinematic GSAP motion transitions integrated.
+- [x] Frontend: React Three Fiber (R3F) base canvas setup with fully working 3D Rubik's Cube.
 
-## Iteration 3: The Learning Auditor (v0.3)
-**Goal:** Dynamic data tracking using the database.
+## Iteration 3: Storybook Isolation & Component Testing - ✅ COMPLETED
+**Goal:** Isolate complex components for visual testing.
+- [x] Frontend: Storybook initialized.
+- [x] Frontend: Stories created for `Chat.tsx` and `Hero3DRubiks`.
+
+## Iteration 4: The AI Chatbot MVP (v0.4) - 🚧 IN PROGRESS
+**Goal:** Interactive LLM assistant for visitors.
+- [x] Backend: Scaffolded FastAPI streaming endpoint (`POST /api/chat/stream`).
+- [x] Frontend: Chat UI component (`Chat.tsx`) with raw fetch/SSE streaming support.
+- [ ] Integration: Perfect the contract-driven SSE link between Next.js and FastAPI.
+- [ ] Database: Log chat histories in Supabase.
+
+## Iteration 5: The Learning Auditor & Performance (v0.5) - 🔮 UPCOMING
+**Goal:** Dynamic data tracking and WebGL telemetry.
+- [ ] Frontend: `r3f-perf` + `leva` for JSON-exportable performance telemetry.
 - [ ] Database: Supabase schema for `learning_sessions` and RLS policies.
 - [ ] Backend: FastAPI CRUD routes for audits with Pydantic validation.
-- [ ] Frontend: Server Actions to fetch/mutate data and an animated dashboard to display stats.
-
-## Iteration 4: The AI Chatbot (v0.4)
-**Goal:** Interactive LLM assistant for visitors.
-- [ ] Backend: Integrate LLM API in FastAPI with streaming capabilities.
-- [ ] Frontend: Chat UI component with streaming text support.
-- [ ] Database: Log chat histories in Supabase.
