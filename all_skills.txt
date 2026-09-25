@@ -1,0 +1,432 @@
+
+
+--- FILE: .agents/skills/portfolio-workspace-manager/SKILL.md ---
+
+---
+name: portfolio-workspace-manager
+description: "Guidelines for sandboxing highly experimental UI or 3D refactors using isolated shadow workspaces."
+---
+# Portfolio Workspace Manager
+
+When the user requests high-risk, complex changes—such as overhauling a React Three Fiber scene, rewriting core GSAP animations, or executing massive refactors—you must protect the main branch.
+
+## Standard Operating Procedure
+
+1. **Sandboxing:** Invoke the specialized sub-agent (e.g., `Frontend Tech Lead`) using the native `Workspace: 'branch'` or `Workspace: 'share'` setting in your `invoke_subagent` tool.
+2. **Model Selection:** For heavy 3D math (WebGL, Three.js, Quaternions) or deep architectural logic, deploy the `pro` model tier. For standard UI refactoring within the sandbox, `flash` is preferred for speed.
+3. **Execution:** The sub-agent works entirely in this shadow workspace, ensuring the main project files are untouched.
+4. **Review & Merge:** Once the sub-agent reports success, the Orchestrator reviews the artifacts. Only upon user approval are the sandboxed changes manually merged or applied to the primary workspace.
+
+
+--- FILE: .agents/skills/portfolio-qa-tester/SKILL.md ---
+
+---
+name: portfolio-qa-tester
+description: "Guideline and skill for spawning QA agents to test code in a localized Actor-Critic loop before returning to the Orchestrator."
+---
+# Portfolio QA Tester Workflow
+
+When a sub-agent writes new feature code (Next.js components, FastAPI routes, or complex logic), you should NOT accept the code immediately. Instead, employ the **Actor-Critic Loop**.
+
+## Standard Operating Procedure
+
+1. **Pairing:** When invoking a Developer agent, simultaneously or sequentially invoke a QA Tester agent.
+2. **Model Selection:** Use the `flash` model tier for standard unit testing and QA tasks, as it is exceptionally fast and capable of writing standard Jest/Playwright or Pytest suites.
+3. **Execution:** The QA agent must write tests for the Developer's code and run them locally.
+4. **Feedback:** If the tests fail, the QA agent sends the errors directly back to the Developer agent via `send_message`. They loop until the tests pass.
+5. **Completion:** Only when the QA agent confirms all tests pass should the Orchestrator synthesize the final result for the user.
+
+
+--- FILE: .agents/skills/portfolio-workflow-advisor/SKILL.md ---
+
+---
+name: portfolio-workflow-advisor
+description: >-
+  Use this skill to provide strategic advice on project execution, task ordering, and workflow management. 
+---
+
+# Workflow Advisor Guidelines
+
+When the user asks for advice on how to sequence tasks, manage the project, or choose between development paradigms (e.g., Frontend-First vs Backend-First), follow these rules:
+
+## 1. Strategic Principles for Decoupled Systems
+- **API-First / Contract-Driven**: In a decoupled architecture (Next.js + FastAPI), always recommend establishing the "Contract" (the API endpoints and data schemas) before diving deep into either side.
+- **Parallel Execution**: Once the contract is defined, the frontend can be built using mock data that matches the contract, while the backend builds the actual logic.
+- **Vertical Slices**: Recommend building feature by feature (e.g., "Build the Chatbot feature front-to-back") rather than layer by layer ("Build the entire database, then the entire UI").
+
+## 2. Integration with the Explainer Skill
+When you suggest a workflow or make a strategic choice, you **must** justify it using the format defined in the `portfolio-explainer` skill. 
+- You must include the **Why**, the **What**, and the **How**.
+- You must include an **Analogy** to make the project management concept easy to understand.
+
+## 3. Empathy and Guidance
+If the user is unsure of where to start, present 2 clear options with their pros and cons, but confidently recommend the one that fits best practices.
+
+
+--- FILE: .agents/skills/portfolio-frontend-performance/SKILL.md ---
+
+---
+name: portfolio-frontend-performance
+description: >-
+  Use this skill to ensure highly animated or 3D frontend components remain highly performant.
+---
+
+# Frontend Performance Guidelines
+
+For a highly animated Next.js portfolio, preventing layout thrashing and main-thread blocking is critical.
+
+## 1. Dynamic Imports
+Always lazy-load heavy animation libraries or 3D components if they aren't above the fold.
+```tsx
+import dynamic from 'next/dynamic'
+// Load 3D Canvas only on client, and only when needed
+const Scene = dynamic(() => import('@/components/animations/Scene'), { ssr: false })
+```
+
+## 2. Image Optimization
+- Never use standard `<img>` tags. Always use `next/image` (`<Image />`).
+- Prioritize LCP (Largest Contentful Paint) images by adding the `priority` prop.
+
+## 3. Animation Performance
+- **CSS / GSAP**: Only animate `transform` and `opacity`. Animating `width`, `height`, `top`, or `left` triggers layout recalculations (reflows) which kill frame rates.
+- **Will-Change**: Use the CSS `will-change: transform` property on elements that are about to be heavily animated, but remove it once the animation completes to free up GPU memory.
+
+## 4. Web Fonts
+- Use `next/font` (e.g., `next/font/google` or `next/font/local`) to automatically self-host fonts and prevent layout shifts (CLS).
+
+
+--- FILE: .agents/skills/portfolio-system-design-auditor/SKILL.md ---
+
+---
+name: portfolio-system-design-auditor
+description: >-
+  Use this skill to evaluate code or architecture changes against best practices, security, and project guidelines. Proactively trigger this if a proposed change seems like a bad practice.
+---
+
+# System Design Auditor
+
+You are the guardian of the project's architecture. Whenever significant changes are proposed or implemented, verify them against these principles:
+
+## 1. Architectural Integrity
+- **BFF Pattern**: Is the Next.js frontend directly calling Supabase for complex operations? It shouldn't. Complex business logic belongs in the FastAPI backend.
+- **Separation of Concerns**: UI components should not contain data-fetching logic. Fetching should happen in Server Actions or dedicated hooks.
+- **Modularity**: Are FastAPI routes getting too big? Ensure logic is abstracted to the `services/` directory.
+
+## 2. Security & Data
+- **Environment Variables**: Never expose `NEXT_PUBLIC_` secrets unless explicitly required by the client.
+- **Row Level Security (RLS)**: Ensure any new Supabase table has RLS enabled with explicit policies.
+- **Validation**: Ensure all FastAPI endpoints validate incoming data strictly using Pydantic.
+
+## 3. Auditing Process
+If a user requests a change that violates these principles:
+1. Stop and alert the user.
+2. Explain *why* it violates the architecture.
+3. Propose a solution that achieves their goal while maintaining system design integrity.
+
+
+--- FILE: .agents/skills/portfolio-animations/SKILL.md ---
+
+---
+name: portfolio-animations
+description: >-
+  Use this skill when implementing GSAP and Anime.js animations in the Next.js frontend.
+---
+
+# Animation Guidelines (GSAP & Anime.js in React)
+
+## General Strategy
+- **GSAP**: Use for complex timelines, ScrollTrigger animations, and overarching page transitions.
+- **Anime.js**: Use for specific micro-interactions, complex SVG path tracing, or DOM properties that are simpler to sequence outside of GSAP.
+
+## GSAP + React Best Practices
+1. **Always use `@gsap/react`**: Use the `useGSAP()` hook instead of `useEffect()` for GSAP animations. This handles React 18 Strict Mode cleanup automatically.
+2. **Scoping**: Always pass a `ref` scope to `useGSAP({ scope: containerRef })` to limit selector queries to the component, preventing clashes across the app.
+3. **FOUC (Flash of Unstyled Content)**: For elements that animate in on load, set them to `visibility: hidden` or `opacity: 0` in Tailwind first, then let GSAP reveal them.
+
+## Code Example
+```tsx
+"use client";
+import { useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+
+export default function AnimatedSection() {
+  const container = useRef(null);
+
+  useGSAP(() => {
+    gsap.from(".box", { y: 100, opacity: 0, stagger: 0.1 });
+  }, { scope: container });
+
+  return (
+    <div ref={container}>
+      <div className="box invisible">Box 1</div>
+      <div className="box invisible">Box 2</div>
+    </div>
+  );
+}
+```
+
+
+--- FILE: .agents/skills/portfolio-3d-r3f/SKILL.md ---
+
+---
+name: portfolio-3d-r3f
+description: >-
+  Use this skill when implementing 3D graphics, models, and 3D handlers using React Three Fiber and Three.js in the frontend.
+---
+
+# React Three Fiber (3D) Guidelines
+
+## Best Practices
+1. **Canvas Placement**: The `<Canvas>` component from `@react-three/fiber` must be placed in a Client Component (`"use client"`). Keep the Canvas as high up in the component tree as possible (e.g., full screen background) and use HTML overlays for text, rather than nesting multiple Canvases.
+2. **Model Loading**: 
+   - Use `@react-three/drei`'s `useGLTF` hook to load `.gltf` or `.glb` models.
+   - Always wrap 3D components that load assets in a `<Suspense>` boundary to prevent the app from crashing while assets download.
+3. **Performance Optimization (The 3D Handler)**:
+   - Use `useFrame` sparingly. If animating within `useFrame`, do not instantiate new objects (like `new THREE.Vector3()`) inside the loop. Declare them outside and mutate them to prevent garbage collection stutter.
+   - Set `dpr={[1, 2]}` on the Canvas to cap pixel ratio on high-res screens (saves GPU).
+4. **HTML Integration**: Use the `<Html>` component from `@react-three/drei` to project standard DOM elements into the 3D scene (like tooltips or labels).
+
+## Installation Reference
+If not installed, you will need:
+`npm install three @react-three/fiber @react-three/drei`
+`npm install -D @types/three`
+
+
+--- FILE: .agents/skills/portfolio-nextjs-bff/SKILL.md ---
+
+---
+name: portfolio-nextjs-bff
+description: >-
+  Use this skill when scaffolding or modifying the Next.js Frontend/BFF code.
+---
+
+# Next.js BFF Development Guidelines
+
+## Project Structure
+- `app/`: Next.js App Router layout, pages, and loading states.
+- `components/`: Reusable React components (shadcn/ui or custom Tailwind components).
+- `lib/`: Utility functions and shared types.
+- `server/`: Next.js Server Actions that act as the Backend-For-Frontend, making requests to FastAPI or Supabase.
+
+## Best Practices
+1. **Server Components First**: Default to React Server Components (RSC) to reduce client-side JavaScript. Only use `"use client"` when interactivity (hooks, state) is necessary.
+2. **Server Actions for Mutations**: Use Next.js Server Actions in the `server/` directory for data mutations. These actions should call out to FastAPI endpoints or Supabase APIs.
+3. **Tailwind CSS**: Use Tailwind for all styling. Maintain a clean `tailwind.config.ts`.
+4. **Environment Variables**: Never expose `NEXT_PUBLIC_` variables unless absolutely necessary. Keep secrets in the Server Actions/Server Components.
+
+## Command Reference
+- Run Dev: `npm run dev`
+- Build: `npm run build`
+- Lint: `npm run lint`
+
+
+--- FILE: .agents/skills/portfolio-architecture/SKILL.md ---
+
+---
+name: portfolio-architecture
+description: >-
+  Use this skill to understand the high-level architecture of the Portfolio project.
+  It details how Next.js (BFF), FastAPI (Backend), and Supabase (DB) interact.
+---
+
+# Portfolio Project Architecture
+
+This document describes the architectural layout of the Portfolio website.
+
+## Tech Stack Overview
+1. **Frontend & BFF**: Next.js (App Router, Server Actions)
+2. **Backend**: FastAPI (Python)
+3. **Database & Auth**: Supabase (PostgreSQL, Storage, Auth)
+
+## Data Flow
+- **Client (Browser)** -> communicates with -> **Next.js (BFF)**
+- **Next.js (BFF)** -> communicates with -> **FastAPI** (for complex logic, data processing) or **Supabase** (for direct UI-driven CRUD if safe)
+- **FastAPI** -> communicates with -> **Supabase** (Database operations, admin tasks)
+
+## Guidelines
+- Keep complex business logic out of the Next.js frontend. Push it to FastAPI.
+- Use Next.js mainly for UI routing, SSR/SSG, styling (Tailwind), and orchestration.
+- Supabase should act as the single source of truth. Use Row Level Security (RLS) extensively.
+- For AI or compute-heavy tasks, always rely on the FastAPI microservice.
+
+
+--- FILE: .agents/skills/portfolio-checkpointing/SKILL.md ---
+
+---
+name: portfolio-checkpointing
+description: Enforces automatically saving the state of the project before undergoing any major refactors or architectural changes.
+---
+# Portfolio Checkpointing
+
+As an autonomous agent, whenever you are instructed to perform a major refactor, rewrite a core component, or tear down existing architecture, you **MUST** automatically save the current state of the project before modifying any files. 
+
+This ensures that if a hallucination occurs or the new aesthetic/architecture fails, the user can easily revert to the previous working iteration.
+
+## Standard Operating Procedure
+
+Before executing tool calls that modify files for a major change, you must do the following:
+
+### 1. The Git Checkpoint (Preferred)
+Run a terminal command to stage and commit the current working state.
+```bash
+git add .
+git commit -m "chore(backup): automatic state checkpoint before [Name of Feature/Refactor]"
+```
+
+### 2. The Scratch Backup (Fallback/Targeted)
+If you are only tearing down a specific file and want an immediate localized backup, copy it to the `scratch/` directory with a `.backup` timestamp.
+```bash
+cp path/to/file.tsx scratch/file.tsx.backup
+```
+
+### 3. Acknowledgment
+Briefly inform the user in your response that the safety checkpoint has been created. Do this alongside your architectural plan.
+
+
+--- FILE: .agents/skills/portfolio-integration-auditor/SKILL.md ---
+
+---
+name: portfolio-integration-auditor
+description: "Guidelines for enforcing Contract-Driven Parallel Execution between frontend and backend agents."
+---
+# Portfolio Integration Auditor
+
+To prevent bottlenecking, Frontend and Backend development should occur in parallel, governed by a strict API contract.
+
+## Standard Operating Procedure
+
+1. **The Contract:** Before any implementation begins, the Orchestrator must define a strict API contract (e.g., shared TypeScript types, OpenAPI schema, or a mock JSON payload) outlining exactly how the Frontend and Backend will communicate.
+2. **Parallel Deployment:** The Orchestrator invokes both a Frontend sub-agent and a Backend sub-agent simultaneously.
+3. **Model Selection:** Use the `flash` model tier for standard CRUD backend routes and basic React UI consumption, optimizing for speed and efficiency.
+4. **Validation:** An Integration Auditor agent (or the Orchestrator) must verify that the Next.js BFF data fetching logic perfectly matches the FastAPI response schema before finalizing the feature.
+
+
+--- FILE: .agents/skills/portfolio-orchestrator/SKILL.md ---
+
+---
+name: portfolio-orchestrator
+description: "Use this skill whenever the user assigns a complex task. It instructs you to act as the Lead Architect and use native subagent tools to orchestrate a multi-agent workflow in the chat."
+---
+
+# Portfolio Multi-Agent Orchestrator
+
+You are the **Lead Architect** for this Portfolio project. Whenever the user asks you to implement a new feature, refactor code, or perform a complex project task, you MUST NOT execute the entire task yourself. Instead, you will orchestrate a team of specialized sub-agents natively within the chat environment.
+
+## Your Standard Operating Procedure:
+
+1. **Strategic Planning & Transparency (The Advisor Role):** 
+   Analyze the user's request. Before writing code or calling any sub-agents, you MUST present the architectural decisions to the user:
+   *   **Present Options:** Always outline the possible technical approaches to solving their request.
+   *   **Pros & Cons:** List the pros and cons of each approach.
+   *   **Make a Recommendation:** Clearly state which option you recommend and *why*.
+   *   **Push Back on Bad Ideas:** If the user requests something that violates best practices, introduces technical debt, or has critical flaws, you MUST point it out and suggest a better alternative (leveraging the `portfolio-system-design-auditor` and `portfolio-explainer` mindsets).
+   Once aligned, tell them exactly how you are breaking down the task and which sub-agents you will deploy.
+
+2. **Define the Team:** 
+   If they aren't already available in the session, use your `define_subagent` tool to create highly-specialized experts. Common roles include:
+   *   **Frontend Tech Lead:** Focuses strictly on Next.js architecture, React Three Fiber (3D), and GSAP animations.
+   *   **Backend Tech Lead:** Focuses strictly on FastAPI, Python logic, and Supabase.
+   *   **Tech Debt Agents (Frontend & Backend):** Dedicated cleanup crews that scan for and fix redundancies and anti-patterns.
+
+3. **Dispatch Tasks Concurrently:** 
+   Use the `invoke_subagent` tool to send tasks to your team. Give each agent a highly specific prompt restricted to their domain. Do not overwhelm them with context outside their expertise.
+
+4. **Review & Synthesize:** 
+   Wait for the sub-agents to complete their tasks and report back. Review their work. If there was a major feature implementation, you MUST invoke the Tech Debt agents to scan the new code for redundancies. Finally, present a cohesive summary to the user.
+
+## Core Directives
+*   **Never monolith:** Delegate domain-specific tasks.
+*   **Self-Healing:** Always enforce tech debt cleanup after major changes.
+*   **Transparency:** Act as a project manager, always communicating the "why" behind your orchestration.
+
+
+--- FILE: .agents/skills/portfolio-fastapi-backend/SKILL.md ---
+
+---
+name: portfolio-fastapi-backend
+description: >-
+  Use this skill when scaffolding, writing, or debugging the FastAPI backend.
+---
+
+# FastAPI Backend Guidelines
+
+## Project Structure
+- `api/`: API router definitions and endpoints.
+- `core/`: Config settings, security, and dependencies.
+- `models/`: Pydantic models for validation (Schemas).
+- `services/`: Business logic and external service integrations (e.g., Supabase SDK).
+- `main.py`: Application entry point.
+
+## Best Practices
+1. **Pydantic V2**: Use Pydantic v2 for all data validation and request/response models.
+2. **Async Everything**: Define endpoints with `async def` and use asynchronous libraries whenever possible.
+3. **Dependency Injection**: Use FastAPI's `Depends` for reusable logic like database connections or user authentication verification.
+4. **Supabase Integration**: Use the official `supabase-py` client (or HTTPX with Supabase REST) within the `services` layer to interact with the database.
+
+## Command Reference
+- Run Dev: `uvicorn main:app --reload`
+- Test: `pytest`
+- Format: `black . && isort .`
+
+
+--- FILE: .agents/skills/portfolio-explainer/SKILL.md ---
+
+---
+name: portfolio-explainer
+description: >-
+  Use this skill when the user asks to explain recent code changes, complex systems, or "what was just done".
+---
+
+# Explainer Guidelines
+
+When the user asks for an explanation of changes, follow this format to ensure clarity, context, and educational value:
+
+## 1. Structure of the Explanation
+- **The "Why"**: Start with the problem we were solving or the goal we were trying to achieve. Don't just list files.
+- **The "What"**: Summarize the actual changes made in plain English.
+- **The "How" (Technical Details)**: Provide a bulleted list of the specific files changed and a brief 1-sentence summary of the logic updated in each.
+
+## 2. Communication Style
+- **Use Analogies**: If the concept is complex (e.g., React Server Components vs Client Components, or RLS policies), use a brief real-world analogy.
+- **Keep it Digestible**: Use Markdown extensively. Bold key terms, use code blocks for small snippets to illustrate a point, and avoid giant walls of text.
+- **Next Steps**: Always end the explanation by clearly stating what the system is ready to do next, handing control back to the user.
+
+## Example Format
+```markdown
+### Why we did this
+We needed the UI to securely access the database without exposing our API keys.
+
+### What changed
+I created a "middleman" function (Server Action) that talks to the database securely on the server.
+
+### Technical Details
+- `server/actions.ts`: Added `getAudits()` using the Supabase admin client.
+- `app/page.tsx`: Updated the UI to await `getAudits()`.
+```
+
+
+--- FILE: .agents/skills/portfolio-supabase-db/SKILL.md ---
+
+---
+name: portfolio-supabase-db
+description: >-
+  Use this skill for database migrations, Supabase CLI operations, and Row Level Security (RLS) policies.
+---
+
+# Supabase Database Guidelines
+
+## Best Practices
+1. **Migrations**: Always use the Supabase CLI to generate and apply migrations. Do not make manual changes to the production schema via the dashboard.
+   - Command: `supabase migration new <name>`
+2. **Row Level Security (RLS)**: By default, tables should have RLS enabled. Write explicit policies for SELECT, INSERT, UPDATE, and DELETE.
+   - Example: `ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;`
+3. **Roles**: Understand the difference between `anon` (unauthenticated), `authenticated` (logged-in users), and `service_role` (bypass RLS, used by FastAPI backend).
+4. **Local Dev**: Use the Supabase CLI for local development to ensure a reproducible environment.
+
+## Command Reference
+- Start Local DB: `supabase start`
+- Stop Local DB: `supabase stop`
+- Create Migration: `supabase migration new <name>`
+- Apply Migrations: `supabase db reset`
+- Generate Types: `supabase gen types typescript --local > types/supabase.ts`

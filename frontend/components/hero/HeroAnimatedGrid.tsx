@@ -1,11 +1,12 @@
 'use client';
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import MathEquations from './MathEquations';
+import { useGridAnimation } from './hooks/useGridAnimation';
 
 export interface HeroAnimatedGridRef {
-  getScrollTimeline: (isDesktop?: boolean) => gsap.core.Timeline;
+  getScrollTimeline: (isDesktop?: boolean, targetSelector?: string) => gsap.core.Timeline;
 }
 
 const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) => {
@@ -13,7 +14,6 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const waveRingRef = useRef<SVGCircleElement>(null);
   
-  const mousePosRef = useRef({ x: -1000, y: -1000 });
   const animStateRef = useRef({ time: 0, waveOpacity: 1, mouseOpacity: 0, isActive: true });
   
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -22,67 +22,13 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
 
   const waveSpeed = 200;
 
-  const updateMaskOnly = () => {
-    if (!gridContainerRef.current) return;
-    const { x, y } = mousePosRef.current;
-    const { mouseOpacity, waveOpacity, time } = animStateRef.current;
-    
-    let finalMask = `radial-gradient(circle 350px at ${x}px ${y}px, rgba(0,0,0,${mouseOpacity}) 0%, rgba(0,0,0,0) 100%)`;
-    
-    const waveFront = waveSpeed * time;
-    if (waveOpacity > 0 && waveFront > 0) {
-      const waveMask = `radial-gradient(circle at 50% 50%, rgba(0,0,0,${waveOpacity}) ${Math.max(0, waveFront - 20)}px, rgba(0,0,0,0) ${waveFront + 20}px)`;
-      finalMask = `${finalMask}, ${waveMask}`;
-    }
-
-    const centerMask = `radial-gradient(circle 350px at 50% 50%, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)`;
-    finalMask = `${finalMask}, ${centerMask}`;
-
-    Object.values(dotPositionsRef.current).forEach((pos) => {
-      const dotMask = `radial-gradient(circle 350px at ${pos.x}px ${pos.y}px, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)`;
-      finalMask = `${finalMask}, ${dotMask}`;
-    });
-
-    gridContainerRef.current.style.maskImage = finalMask;
-    gridContainerRef.current.style.webkitMaskImage = finalMask;
-    gridContainerRef.current.style.maskComposite = 'add';
-    gridContainerRef.current.style.webkitMaskComposite = 'add';
-  };
-
-  useEffect(() => {
-    setDimensions({ width: window.innerWidth, height: window.innerHeight });
-    
-    const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        mousePosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-        
-        if (!animStateRef.current.isActive) {
-          updateMaskOnly(); 
-        }
-      }
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    
-    const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
-    window.addEventListener('resize', handleResize);
-    
-    gsap.ticker.add(updateMaskOnly);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', handleResize);
-      gsap.ticker.remove(updateMaskOnly);
-    };
-  }, []);
+  useGridAnimation(gridContainerRef as any, containerRef as any, dotPositionsRef, animStateRef, setDimensions);
 
   useGSAP(() => {
     if (dimensions.width === 0) return;
 
-    // Use matchMedia for responsive animations and automatic cleanup on unmount
     const mm = gsap.matchMedia();
 
-    // Common animations (continuous loops, automatically managed by useGSAP scope)
     gsap.to('.hero-core-dot', {
       scale: 1.2, opacity: 0.8, duration: 3, repeat: -1, yoyo: true, ease: 'sine.inOut'
     });
@@ -91,7 +37,6 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
     });
 
     mm.add("(min-width: 768px)", () => {
-      // Desktop: Heavy wave animation
       const centerX = dimensions.width / 2;
       const centerY = dimensions.height / 2;
       const gridSize = 40;
@@ -99,12 +44,12 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
       const horizontalLines: { y: number; isCenter: boolean; points: number[] }[] = [];
       const verticalLines: { x: number; isCenter: boolean; points: number[] }[] = [];
       
-      const hPoints = [];
+      const hPoints: number[] = [];
       for (let x = -40; x <= dimensions.width + 40; x += 20) hPoints.push(x);
       for (let y = centerY; y < dimensions.height + 40; y += gridSize) horizontalLines.push({ y, isCenter: y === centerY, points: hPoints });
       for (let y = centerY - gridSize; y > -40; y -= gridSize) horizontalLines.push({ y, isCenter: false, points: hPoints });
 
-      const vPoints = [];
+      const vPoints: number[] = [];
       for (let y = -40; y <= dimensions.height + 40; y += 20) vPoints.push(y);
       for (let x = centerX; x < dimensions.width + 40; x += gridSize) verticalLines.push({ x, isCenter: x === centerX, points: vPoints });
       for (let x = centerX - gridSize; x > -40; x -= gridSize) verticalLines.push({ x, isCenter: false, points: vPoints });
@@ -118,8 +63,6 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
           const decay = 0.003; 
           const timeDecay = Math.max(0, 1 - time / 3); 
           const waveFront = waveSpeed * time;
-          
-          updateMaskOnly();
           
           if (waveRingRef.current) {
             waveRingRef.current.setAttribute('r', waveFront.toString());
@@ -141,24 +84,48 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
             };
 
             horizontalLines.forEach((line) => {
-              if (!pathRefs.current[pathIndex]) return;
-              let d = `M -40 ${line.y + getDisplacement(-40, line.y)}`;
+              const pathEl = pathRefs.current[pathIndex];
+              if (!pathEl) return;
+              
+              let hasSignificantDisplacement = false;
+              const startDisp = getDisplacement(-40, line.y);
+              if (Math.abs(startDisp) > 0.5) hasSignificantDisplacement = true;
+              let d = `M -40 ${line.y + startDisp}`;
+              
               for (let i = 1; i < line.points.length; i++) {
                 const px = line.points[i];
-                d += ` L ${px} ${line.y + getDisplacement(px, line.y)}`;
+                const disp = getDisplacement(px, line.y);
+                if (Math.abs(disp) > 0.5) hasSignificantDisplacement = true;
+                d += ` L ${px} ${line.y + disp}`;
               }
-              pathRefs.current[pathIndex]?.setAttribute('d', d);
+              
+              if (hasSignificantDisplacement || pathEl.dataset.dirty === "true") {
+                pathEl.setAttribute('d', d);
+                pathEl.dataset.dirty = hasSignificantDisplacement ? "true" : "false";
+              }
               pathIndex++;
             });
 
             verticalLines.forEach((line) => {
-              if (!pathRefs.current[pathIndex]) return;
-              let d = `M ${line.x + getDisplacement(line.x, -40)} -40`;
+              const pathEl = pathRefs.current[pathIndex];
+              if (!pathEl) return;
+              
+              let hasSignificantDisplacement = false;
+              const startDisp = getDisplacement(line.x, -40);
+              if (Math.abs(startDisp) > 0.5) hasSignificantDisplacement = true;
+              let d = `M ${line.x + startDisp} -40`;
+              
               for (let i = 1; i < line.points.length; i++) {
                 const py = line.points[i];
-                d += ` L ${line.x + getDisplacement(line.x, py)} ${py}`;
+                const disp = getDisplacement(line.x, py);
+                if (Math.abs(disp) > 0.5) hasSignificantDisplacement = true;
+                d += ` L ${line.x + disp} ${py}`;
               }
-              pathRefs.current[pathIndex]?.setAttribute('d', d);
+              
+              if (hasSignificantDisplacement || pathEl.dataset.dirty === "true") {
+                pathEl.setAttribute('d', d);
+                pathEl.dataset.dirty = hasSignificantDisplacement ? "true" : "false";
+              }
               pathIndex++;
             });
           }
@@ -166,7 +133,6 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
         onComplete: () => {
           animStateRef.current.isActive = false;
           if (waveRingRef.current) waveRingRef.current.setAttribute('opacity', '0');
-          updateMaskOnly();
         }
       });
 
@@ -176,7 +142,6 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
     });
 
     mm.add("(max-width: 767px)", () => {
-      // Mobile: Disable complex path displacement and heavy masking
       animStateRef.current.isActive = false;
       if (gridContainerRef.current) {
         gridContainerRef.current.style.maskImage = 'none';
@@ -184,7 +149,6 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
       }
       if (waveRingRef.current) waveRingRef.current.setAttribute('opacity', '0');
       
-      // Keep background lines static on mobile
       let pathIndex = 0;
       const centerX = dimensions.width / 2;
       const centerY = dimensions.height / 2;
@@ -211,27 +175,27 @@ const HeroAnimatedGrid = forwardRef<HeroAnimatedGridRef, unknown>((props, ref) =
   }, [dimensions]); 
 
   useImperativeHandle(ref, () => ({
-    getScrollTimeline: (isDesktop = true) => {
+    getScrollTimeline: (isDesktop = true, targetSelector = '#hero-portrait-container') => {
       const tl = gsap.timeline();
       
       if (!isDesktop) return tl;
 
       tl.to('.hero-core-svg', { 
         x: () => {
-          const pc = document.getElementById('hero-portrait-container');
+          const pc = document.querySelector(targetSelector);
           if (pc && window.innerWidth >= 768) {
             const rect = pc.getBoundingClientRect();
             return rect.left + (rect.width * 0.02) - (window.innerWidth / 2);
           }
-          return 0; // Stay horizontally centered on mobile
+          return 0;
         }, 
         y: () => {
-          const pc = document.getElementById('hero-portrait-container');
+          const pc = document.querySelector(targetSelector);
           if (pc && window.innerWidth >= 768) {
             const rect = pc.getBoundingClientRect();
             return rect.top + rect.height / 2 - (window.innerHeight / 2);
           }
-          return 0; // Stay vertically centered on mobile
+          return 0;
         }, 
         ease: 'power2.inOut', 
         duration: 0.4 

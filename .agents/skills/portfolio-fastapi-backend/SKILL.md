@@ -1,7 +1,7 @@
 ---
 name: portfolio-fastapi-backend
 description: >-
-  Use this skill when scaffolding, writing, or debugging the FastAPI backend.
+  Assign this skill to a sub-agent when scaffolding, writing, or debugging the FastAPI backend.
 ---
 
 # FastAPI Backend Guidelines

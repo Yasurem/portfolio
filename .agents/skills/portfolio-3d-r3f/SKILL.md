@@ -1,7 +1,7 @@
 ---
 name: portfolio-3d-r3f
 description: >-
-  Use this skill when implementing 3D graphics, models, and 3D handlers using React Three Fiber and Three.js in the frontend.
+  Assign this skill to a sub-agent when implementing 3D graphics, models, and 3D handlers using React Three Fiber and Three.js in the frontend.
 ---
 
 # React Three Fiber (3D) Guidelines

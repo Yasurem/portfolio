@@ -28,6 +28,15 @@ Portfolio/
 │   ├── Dockerfile                    # Frontend container instructions
 │   ├── components/                   # Reusable React components
 │   │   ├── animations/               # GSAP / Anime.js isolated components
+│   │   ├── hero/                     # Refactored Hero Section Domain
+│   │   │   ├── components/           # Sub-components (e.g., ComplexMathEquation.tsx)
+│   │   │   ├── constants/            # Extracted data (e.g., equations.ts)
+│   │   │   ├── hooks/                # Custom hooks (e.g., useGridAnimation.ts, useRubiksGeometry.ts)
+│   │   │   ├── constants.ts          # Static configurations
+│   │   │   ├── Hero3DRubiks.tsx      # Main 3D Canvas
+│   │   │   ├── HeroAnimatedGrid.tsx  # Main GSAP Background
+│   │   │   ├── HeroOverlayText.tsx   # Text and Buttons overlay
+│   │   │   └── MathEquations.tsx     # Math spawners
 │   │   └── ui/                       # Stateless Tailwind UI components
 │   ├── app/                          # Next.js App Router (Pages & Layouts)
 │   ├── lib/                          # Shared utilities

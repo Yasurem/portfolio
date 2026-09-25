@@ -1,7 +1,7 @@
 ---
 name: portfolio-explainer
 description: >-
-  Use this skill when the user asks to explain recent code changes, complex systems, or "what was just done".
+  Assign this skill to a sub-agent when the user asks to explain recent code changes, complex systems, or "what was just done".
 ---
 
 # Explainer Guidelines

@@ -1,7 +1,7 @@
 ---
 name: portfolio-supabase-db
 description: >-
-  Use this skill for database migrations, Supabase CLI operations, and Row Level Security (RLS) policies.
+  Assign this skill to a sub-agent for database migrations, Supabase CLI operations, and Row Level Security (RLS) policies.
 ---
 
 # Supabase Database Guidelines

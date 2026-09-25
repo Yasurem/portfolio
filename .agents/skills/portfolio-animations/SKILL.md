@@ -1,7 +1,7 @@
 ---
 name: portfolio-animations
 description: >-
-  Use this skill when implementing GSAP and Anime.js animations in the Next.js frontend.
+  Assign this skill to a sub-agent when implementing GSAP and Anime.js animations in the Next.js frontend.
 ---
 
 # Animation Guidelines (GSAP & Anime.js in React)

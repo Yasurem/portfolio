@@ -1,0 +1,376 @@
+import { useRef, useEffect } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import * as THREE from 'three';
+import gsap from 'gsap';
+
+// --- CONFIGURATION CONSTANTS ---
+const CAMERA_UNFOCUSED_POS = new THREE.Vector3(0, 0, 30); 
+const CAMERA_UNFOCUSED_LOOK = new THREE.Vector3(0, 0, 0); 
+const CAMERA_FOCUSED_POS_OFFSET = new THREE.Vector3(0, 0, 15); 
+const CAMERA_FOCUSED_LOOK_OFFSET = new THREE.Vector3(0, 0, 0); 
+const RUBIKS_CUBE_SPACING = 0.76;
+const FLAT_SIDE_ROTATION = new THREE.Euler(-Math.PI / 2, 0, 0);
+
+// --- PRE-ALLOCATED VECTORS ---
+const _targetPos = new THREE.Vector3();
+const _idealLook = new THREE.Vector3();
+const _meshWorldPos = new THREE.Vector3();
+const _tempPos = new THREE.Vector3();
+const _tempQuat = new THREE.Quaternion();
+const _tempEuler = new THREE.Euler();
+const _rotQuat = new THREE.Quaternion();
+const _tempMat = new THREE.Matrix4();
+
+interface RubiksAnimationProps {
+  rubiksPieces: any[];
+  rubiksRefs: React.MutableRefObject<(THREE.Mesh | null)[]>;
+  heroGroupRef: React.RefObject<THREE.Group>;
+  debrisGroupRef: React.RefObject<THREE.Group>;
+  focusedMesh: THREE.Object3D | null;
+}
+
+export function useRubiksAnimation({
+  rubiksPieces,
+  rubiksRefs,
+  heroGroupRef,
+  debrisGroupRef,
+  focusedMesh
+}: RubiksAnimationProps) {
+  const { camera } = useThree();
+  const lookTarget = useRef(new THREE.Vector3().copy(CAMERA_UNFOCUSED_LOOK));
+
+  const solveState = useRef({
+    isSolving: false,
+    hasSolved: false,
+    isScrambling: false,
+  });
+
+  const tlRef = useRef<gsap.core.Timeline | null>(null);
+
+  // Maintain logical coords (-1, 0, 1) for each mesh piece
+  const logicalCoords = useRef<THREE.Vector3[]>([]);
+  
+  useEffect(() => {
+    if (logicalCoords.current.length === 0) {
+      for (let i = 0; i < 27; i++) {
+        const mesh = rubiksRefs.current[i];
+        if (mesh) {
+          logicalCoords.current[i] = new THREE.Vector3(
+            Math.round(mesh.position.x / RUBIKS_CUBE_SPACING),
+            Math.round(mesh.position.y / RUBIKS_CUBE_SPACING),
+            Math.round(mesh.position.z / RUBIKS_CUBE_SPACING)
+          );
+        } else {
+          logicalCoords.current[i] = new THREE.Vector3();
+        }
+      }
+    }
+  }, [rubiksRefs]);
+
+  const updateMeshPositions = (multiplier: number) => {
+    for (let i = 0; i < 27; i++) {
+      const mesh = rubiksRefs.current[i];
+      if (!mesh) continue;
+      const loc = logicalCoords.current[i];
+      mesh.position.set(
+        loc.x * RUBIKS_CUBE_SPACING * multiplier,
+        loc.y * RUBIKS_CUBE_SPACING * multiplier,
+        loc.z * RUBIKS_CUBE_SPACING * multiplier
+      );
+    }
+  };
+
+  const snapMeshes = (indices: number[]) => {
+    for (const meshIdx of indices) {
+      const mesh = rubiksRefs.current[meshIdx];
+      if (!mesh) continue;
+      mesh.position.x = Math.round(mesh.position.x / RUBIKS_CUBE_SPACING) * RUBIKS_CUBE_SPACING;
+      mesh.position.y = Math.round(mesh.position.y / RUBIKS_CUBE_SPACING) * RUBIKS_CUBE_SPACING;
+      mesh.position.z = Math.round(mesh.position.z / RUBIKS_CUBE_SPACING) * RUBIKS_CUBE_SPACING;
+      
+      // Use Matrix4 rounding to perfectly snap orthogonal rotations (fixes Euler Gimbal lock drift)
+      _tempMat.makeRotationFromQuaternion(mesh.quaternion);
+      const e = _tempMat.elements;
+      for (let k = 0; k < 16; k++) {
+        e[k] = Math.round(e[k]);
+      }
+      mesh.quaternion.setFromRotationMatrix(_tempMat);
+      mesh.quaternion.normalize();
+    }
+  };
+
+  const applyRotation = (indices: number[], startPositions: THREE.Vector3[], startQuaternions: THREE.Quaternion[], axisVec: THREE.Vector3, currentAngle: number) => {
+    _rotQuat.setFromAxisAngle(axisVec, currentAngle);
+    for (let j = 0; j < indices.length; j++) {
+      const meshIdx = indices[j];
+      const mesh = rubiksRefs.current[meshIdx];
+      if (!mesh) continue;
+      
+      _tempPos.copy(startPositions[j]).applyQuaternion(_rotQuat);
+      mesh.position.copy(_tempPos);
+      
+      _tempQuat.copy(_rotQuat).multiply(startQuaternions[j]);
+      mesh.quaternion.copy(_tempQuat);
+    }
+  };
+
+  const runSolveAnimation = () => {
+    if (tlRef.current) tlRef.current.kill();
+    solveState.current.hasSolved = true;
+    solveState.current.isSolving = true;
+    solveState.current.isScrambling = false;
+
+    // First ensure pieces are perfectly snapped before Option B floating assembly solve
+    snapMeshes(Array.from({ length: 27 }, (_, i) => i));
+
+    // 1. Identify target slots and non-target flat pieces
+    const targetIndices: number[] = [];
+    const nonTargetFlatIndices: number[] = [];
+    
+    // Update logical coords safely before solve
+    for (let i = 0; i < 27; i++) {
+      const mesh = rubiksRefs.current[i];
+      if (mesh) {
+        logicalCoords.current[i] = new THREE.Vector3(
+          Math.round(mesh.position.x / RUBIKS_CUBE_SPACING),
+          Math.round(mesh.position.y / RUBIKS_CUBE_SPACING),
+          Math.round(mesh.position.z / RUBIKS_CUBE_SPACING)
+        );
+      }
+      
+      const loc = logicalCoords.current[i];
+      if (loc.x === 1 && loc.y === 0 && loc.z === 1) {
+        targetIndices.push(i);
+      } else if (rubiksPieces[i].isTargetCube) {
+        nonTargetFlatIndices.push(i);
+      }
+    }
+
+    // 2. Instantly swap logical positions and physical assignments for the solved pattern
+    let flatSwapIdx = 0;
+    targetIndices.forEach(tIdx => {
+      const isTargetFlat = rubiksPieces[tIdx].isFlat;
+      if (!isTargetFlat && flatSwapIdx < nonTargetFlatIndices.length) {
+        const fIdx = nonTargetFlatIndices[flatSwapIdx++];
+        
+        const tempLoc = logicalCoords.current[tIdx].clone();
+        logicalCoords.current[tIdx].copy(logicalCoords.current[fIdx]);
+        logicalCoords.current[fIdx].copy(tempLoc);
+
+        const tMesh = rubiksRefs.current[tIdx];
+        const fMesh = rubiksRefs.current[fIdx];
+        if (tMesh && fMesh) {
+          const tempPos = tMesh.position.clone();
+          tMesh.position.copy(fMesh.position);
+          fMesh.position.copy(tempPos);
+          
+          const tempQuat = tMesh.quaternion.clone();
+          tMesh.quaternion.copy(fMesh.quaternion);
+          fMesh.quaternion.copy(tempQuat);
+        }
+      }
+    });
+
+    // 3. Setup proxies
+    const spacingProxy = { multiplier: 1.0 };
+    const rotationProxies = Array.from({ length: 27 }, () => ({ t: 0 }));
+
+    const startQuats: THREE.Quaternion[] = [];
+    const targetQuats: THREE.Quaternion[] = [];
+    const frontMat = rubiksPieces[0].material;
+    
+    for (let i = 0; i < 27; i++) {
+      const mesh = rubiksRefs.current[i];
+      if (!mesh) {
+        startQuats.push(new THREE.Quaternion());
+        targetQuats.push(new THREE.Quaternion());
+        continue;
+      }
+      
+      startQuats.push(mesh.quaternion.clone());
+      const loc = logicalCoords.current[i];
+      
+      const targetQuat = new THREE.Quaternion();
+      if (loc.x === 1 && loc.y === 0 && loc.z === 1) {
+        targetQuat.setFromEuler(FLAT_SIDE_ROTATION);
+        mesh.material = frontMat; // Reveal solved texture targeting logic
+      } else {
+        targetQuat.setFromEuler(new THREE.Euler(0, 0, 0));
+      }
+      targetQuats.push(targetQuat);
+    }
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        solveState.current.isSolving = false;
+        updateMeshPositions(1.0);
+        for(let i=0; i<27; i++){
+          const mesh = rubiksRefs.current[i];
+          if(mesh) mesh.quaternion.copy(targetQuats[i]);
+        }
+      }
+    });
+    tlRef.current = tl;
+
+    // Phase 1: Explode
+    tl.to(spacingProxy, {
+      multiplier: 1.3,
+      duration: 0.6,
+      ease: "expo.out",
+      onUpdate: () => updateMeshPositions(spacingProxy.multiplier)
+    });
+
+    // Phase 2: Mid-Air Reorientation
+    tl.to(rotationProxies, {
+      t: 1.0,
+      duration: 0.6,
+      ease: "power3.inOut",
+      onUpdate: () => {
+        for (let i = 0; i < 27; i++) {
+          const mesh = rubiksRefs.current[i];
+          if (mesh) {
+            mesh.quaternion.slerpQuaternions(startQuats[i], targetQuats[i], rotationProxies[i].t);
+          }
+        }
+      }
+    }, "<0.2");
+
+    // Phase 3: Implode & Snap
+    tl.to(spacingProxy, {
+      multiplier: 1.0,
+      duration: 0.8,
+      ease: "back.out(1.7)",
+      onUpdate: () => updateMeshPositions(spacingProxy.multiplier)
+    }, ">-0.2");
+  };
+
+  const runScrambleAnimation = () => {
+    if (tlRef.current) tlRef.current.kill();
+    solveState.current.hasSolved = false;
+    solveState.current.isScrambling = true;
+    solveState.current.isSolving = false;
+    
+    // Reset materials back to original random scatter states
+    for (let i = 0; i < 27; i++) {
+      const mesh = rubiksRefs.current[i];
+      if (mesh) {
+        mesh.material = rubiksPieces[i].material;
+      }
+    }
+
+    // SCENE 1 IDLE: Infinite smooth slicing animation
+    const axes = ['x', 'y', 'z'] as const;
+    const randomAxis = axes[Math.floor(Math.random() * 3)];
+    const randomSlice = Math.floor(Math.random() * 3) - 1; 
+    const randomAngle = (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 2);
+
+    const sliceIndices: number[] = [];
+    for (let i = 0; i < 27; i++) {
+      const mesh = rubiksRefs.current[i];
+      if (!mesh) continue;
+      
+      // EXCLUDE THE CANVAS CUBE FROM EVER ROTATING
+      if (rubiksPieces[i].isTargetCube) continue;
+
+      const posVal = mesh.position[randomAxis];
+      const logicalPos = Math.round(posVal / RUBIKS_CUBE_SPACING);
+      if (logicalPos === randomSlice) {
+        sliceIndices.push(i);
+      }
+    }
+
+    const proxy = { angle: 0 };
+    const startQuats = sliceIndices.map(idx => rubiksRefs.current[idx]!.quaternion.clone());
+    const startPoss = sliceIndices.map(idx => rubiksRefs.current[idx]!.position.clone());
+    const axisVec = new THREE.Vector3();
+    axisVec[randomAxis] = 1;
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        snapMeshes(sliceIndices); // Lock cleanly to grid to prevent drift
+        if (solveState.current.isScrambling) {
+          runScrambleAnimation(); // Loop recursively for an infinite idle animation
+        }
+      }
+    });
+    tlRef.current = tl;
+
+    tl.to(proxy, {
+      angle: randomAngle,
+      duration: 0.75, // Smooth, deliberate twist speed
+      ease: "power2.inOut",
+      onUpdate: () => applyRotation(sliceIndices, startPoss, startQuats, axisVec, proxy.angle)
+    });
+  };
+
+  useFrame((state, delta) => {
+    const clock = state.clock;
+    const zoom = (window as any).heroCameraZoom || 0;
+
+    // Safely setup logical coords if missed during initial React mount cycle
+    if (logicalCoords.current.length === 0 && rubiksRefs.current[0]) {
+      for (let i = 0; i < 27; i++) {
+        const mesh = rubiksRefs.current[i];
+        if (mesh) {
+          logicalCoords.current[i] = new THREE.Vector3(
+            Math.round(mesh.position.x / RUBIKS_CUBE_SPACING),
+            Math.round(mesh.position.y / RUBIKS_CUBE_SPACING),
+            Math.round(mesh.position.z / RUBIKS_CUBE_SPACING)
+          );
+        }
+      }
+    }
+
+    // --- 1. STATE TRIGGERS ---
+    if (zoom > 0.33 && !solveState.current.hasSolved && !solveState.current.isSolving) {
+      runSolveAnimation();
+    }
+
+    if (zoom < 0.25 && solveState.current.hasSolved && !solveState.current.isScrambling) {
+      runScrambleAnimation();
+    }
+
+    // Initialize infinite idle animation on first load
+    if (zoom < 0.25 && !solveState.current.hasSolved && !solveState.current.isScrambling && !solveState.current.isSolving) {
+       runScrambleAnimation();
+    }
+
+    // --- 4. BACKGROUND ROTATIONS & ALIGNMENT ---
+    if (heroGroupRef.current) {
+      if (zoom > 0.33) {
+        heroGroupRef.current.rotation.y = THREE.MathUtils.lerp(heroGroupRef.current.rotation.y, 0, 0.1);
+        heroGroupRef.current.rotation.x = THREE.MathUtils.lerp(heroGroupRef.current.rotation.x, 0, 0.1);
+      } else {
+        heroGroupRef.current.rotation.y += delta * 0.2;
+        heroGroupRef.current.rotation.x = Math.sin(clock.elapsedTime * 0.5) * 0.1;
+      }
+    }
+
+    if (debrisGroupRef.current) {
+      debrisGroupRef.current.rotation.y += delta * 0.05;
+      debrisGroupRef.current.position.y = Math.sin(clock.elapsedTime * 0.2) * 2;
+    }
+
+    // --- 6. CAMERA DOLLY ---
+    if (focusedMesh) {
+      focusedMesh.getWorldPosition(_meshWorldPos);
+      _idealLook.copy(_meshWorldPos).add(CAMERA_FOCUSED_LOOK_OFFSET);
+      _targetPos.copy(_meshWorldPos).add(CAMERA_FOCUSED_POS_OFFSET); 
+    } else {
+      _targetPos.copy(CAMERA_UNFOCUSED_POS);
+      _idealLook.copy(CAMERA_UNFOCUSED_LOOK);
+      _targetPos.z -= zoom * 15; 
+      
+      const startX = -10;
+      const endX = 10;
+      const panOffset = startX + (zoom * (endX - startX)); 
+      
+      _targetPos.x += panOffset;
+      _idealLook.x += panOffset;
+    }
+
+    camera.position.lerp(_targetPos, 0.04);
+    lookTarget.current.lerp(_idealLook, 0.04);
+    camera.lookAt(lookTarget.current);
+  });
+}

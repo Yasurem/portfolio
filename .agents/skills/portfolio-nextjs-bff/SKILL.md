@@ -1,7 +1,7 @@
 ---
 name: portfolio-nextjs-bff
 description: >-
-  Use this skill when scaffolding or modifying the Next.js Frontend/BFF code.
+  Assign this skill to a sub-agent when scaffolding or modifying the Next.js Frontend/BFF code.
 ---
 
 # Next.js BFF Development Guidelines

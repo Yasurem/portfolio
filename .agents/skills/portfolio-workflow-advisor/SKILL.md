@@ -1,7 +1,7 @@
 ---
 name: portfolio-workflow-advisor
 description: >-
-  Use this skill to provide strategic advice on project execution, task ordering, and workflow management. 
+  Use this skill to provide strategic advice on project execution, task ordering, and multi-agent workflow management. 
 ---
 
 # Workflow Advisor Guidelines
