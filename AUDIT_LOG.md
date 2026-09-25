@@ -17,3 +17,4 @@ This file tracks all structural and architectural changes made to the project.
 - [2026-09-22][01:24] Added `portfolio-workflow-advisor` skill to guide project execution strategy and linked it to the Explainer format.
 - [2026-09-22][01:29] Restructured `ROADMAP.md` from horizontal layers to "Shippable Iterations" (Vertical Slices) to support continuous deployment and MVP principles.
 - [2026-09-22][01:39] Implemented Iteration 1 (Step 1): Created FastAPI `/api/health` endpoint and registered it in `main.py`.
+- [2026-09-25][21:28] Audited multi-agent workflow: Updated GEMINI.md complexity gates, killed PROJECT_STATE.md, and achieved tech-debt cleanup by archiving 5 unused skills.

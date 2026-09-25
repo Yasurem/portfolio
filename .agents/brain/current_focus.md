@@ -3,6 +3,7 @@
 **Purpose:** This file acts as the short-term memory between LLM sessions. It is updated by the Lead Architect at the end of every major task.
 
 ### Last Completed Task
+- **Tech Debt & Workflow Cleanup:** Updated GEMINI.md complexity gates, killed redundant PROJECT_STATE.md, and used `tech_debt_scanner` to archive 5 unused skills to improve agent context overhead.
 - **Multi-Agent Workflow Restructuring:** Audited and overhauled the entire `.agents/` infrastructure. Fixed inconsistent agent directory structure, deduplicated agent definitions vs skill files, added file scope boundaries, removed phantom dependencies (Anime.js, Framer Motion), added escalation protocol, and created a skill-to-agent assignment matrix.
 - **Architecture & Multi-Agent Rules:** Implemented enforced JSON Protocols for sub-agent communication and Time-to-Live caps for shadow workspaces.
 - **Chatbot MVP (Contract-Driven):** Drafted and approved the `api_contract.md` for Next.js -> FastAPI communication.

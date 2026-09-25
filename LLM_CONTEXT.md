@@ -22,5 +22,5 @@ Do not write code yourself. Delegate to these specific personas in `.agents/agen
 
 ### 3. Agentic Workflows
 - **QA Testing:** Use `portfolio-qa-tester` to spawn a QA subagent to check developer code.
-- **Visual 3D Testing:** Use `portfolio-qa-vision-tester` to spawn Playwright/Gemini-Vision loops for Three.js.
+- **Visual 3D Testing:** Use the archived visual testing approach to spawn Playwright/Gemini-Vision loops for Three.js.
 - **Sandboxing:** Use `Workspace: 'branch'` when testing experimental R3F/GSAP code.

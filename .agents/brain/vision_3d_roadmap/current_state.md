@@ -6,7 +6,7 @@
 
 **Status Audit:**
 - [x] Defined the Architectural Pivot to Storytelling-First.
-- [x] Defined the `portfolio-qa-vision-tester` skill.
+- [x] Defined the visual QA testing approach (skill archived).
 - [x] Install and configure Storybook for Next.js and React Three Fiber. (Delegated to Sub-Agent)
 - [x] Install `r3f-perf` and `leva` for performance telemetry. (IN PROGRESS)
 - [ ] Set up Playwright snapshot scripts.
