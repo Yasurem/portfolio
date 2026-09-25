@@ -1,14 +1,14 @@
 ---
 name: portfolio-animations
 description: >-
-  Assign this skill to a sub-agent when implementing GSAP and Anime.js animations in the Next.js frontend.
+  Assign this skill to a sub-agent when implementing GSAP animations and scroll-linked effects in the Next.js frontend.
 ---
 
-# Animation Guidelines (GSAP & Anime.js in React)
+# Animation Guidelines (GSAP in React)
 
 ## General Strategy
-- **GSAP**: Use for complex timelines, ScrollTrigger animations, and overarching page transitions.
-- **Anime.js**: Use for specific micro-interactions, complex SVG path tracing, or DOM properties that are simpler to sequence outside of GSAP.
+- **GSAP** is the **exclusive** animation library for this project. Use it for complex timelines, ScrollTrigger animations, overarching page transitions, micro-interactions, and SVG path tracing.
+- Do **NOT** introduce Anime.js, Framer Motion, React Spring, or any other animation library.
 
 ## GSAP + React Best Practices
 1. **Always use `@gsap/react`**: Use the `useGSAP()` hook instead of `useEffect()` for GSAP animations. This handles React 18 Strict Mode cleanup automatically.
