@@ -22,7 +22,9 @@ export default function Chat() {
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
   }, [messages, isStreaming]);
 
   const handleSubmit = async (e: React.FormEvent) => {
